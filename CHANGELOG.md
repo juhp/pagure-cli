@@ -1,12 +1,6 @@
 # Changelog
 
-`pagure` uses [PVP Versioning][1].
-The changelog is available [on GitHub][2].
+`pagure` uses [PVP Versioning](https://pvp.haskell.org).
 
-0.0.0
-=====
-
-* Initially created.
-
-[1]: https://pvp.haskell.org
-[2]: https://github.com/juhp/pagure/releases
+## 0.0.0
+- Initially created.

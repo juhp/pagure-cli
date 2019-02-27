@@ -1,0 +1,37 @@
+cabal-version:       2.0
+name:                pagure-cli
+version:             0.1
+synopsis:            Pagure client
+description:         Pagure client
+homepage:            https://github.com/juhp/pagure
+bug-reports:         https://github.com/juhp/pagure/issues
+license:             GPL-2
+license-file:        LICENSE
+author:              Jens Petersen
+maintainer:          juhpetersen@gmail.com
+copyright:           2019 Jens Petersen
+category:            Utiliy
+build-type:          Simple
+extra-doc-files:     README.md
+                   , CHANGELOG.md
+tested-with:         GHC == 7.10.3, GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4
+
+source-repository head
+  type:                git
+  location:            https://github.com/juhp/pagure.git
+
+executable pagure
+  main-is:             Main.hs
+
+  build-depends:       aeson
+                     , microlens
+                     , microlens-aeson
+                     , base < 5
+                     , http-client
+                     , http-client-tls
+                     , simple-cmd-args
+
+  ghc-options:         -Wall
+
+  default-language:    Haskell2010
+  default-extensions:  OverloadedStrings
