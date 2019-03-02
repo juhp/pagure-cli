@@ -30,6 +30,7 @@ executable pagure
                      , http-client
                      , http-client-tls
                      , simple-cmd-args
+                     , text
 
   ghc-options:         -Wall
 

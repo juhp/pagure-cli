@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Data.Maybe (fromMaybe)
+import qualified Data.Text.IO as T
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Lens.Micro
@@ -21,10 +22,13 @@ main = do
         req1 <- parseRequest url
         res1 <- responseBody <$> httpLbs req1 mgr
         let pages = res1 ^? key "pagination" . key "pages" . _Integer
-        mapM_ print $ res1 ^.. key "projects" . values . key "name" . _String
+        printProjects res1
         mapM_ (nextPage mgr url) [2..(fromMaybe 0 pages)]
           where
             nextPage mgr url p = do
               req <- parseRequest $ url ++ "&page=" ++ show p
               res <- responseBody <$> httpLbs req mgr
-              mapM_ print $ res ^.. key "projects" . values . key "name" . _String
+              printProjects res
+
+            printProjects res =
+              mapM_ T.putStrLn $ res ^.. key "projects" . values . key "name" . _String
