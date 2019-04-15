@@ -23,13 +23,14 @@ source-repository head
 executable pagure
   main-is:             Main.hs
 
-  build-depends:       aeson
-                     , microlens
-                     , microlens-aeson
+  build-depends:       bytestring
                      , base < 5
                      , http-client
                      , http-client-tls
-                     , simple-cmd-args
+                     , microlens
+                     , microlens-aeson
+                     , optparse-applicative
+                     , simple-cmd-args >= 0.1.1
                      , text
 
   ghc-options:         -Wall
