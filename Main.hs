@@ -1,6 +1,8 @@
 module Main (main) where
 
 import Data.Maybe (fromMaybe)
+-- for ghc <= 8.2
+import Data.Semigroup ((<>))
 import qualified Data.Text.IO as T
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
