@@ -1,5 +1,11 @@
+{-# LANGUAGE CPP #-}
+
 module Main (main) where
 
+#if (defined(MIN_VERSION_base) && MIN_VERSION_base(4,8,0))
+#else
+import Control.Applicative ((<$>), (<*>))
+#endif
 import Data.Maybe (fromMaybe)
 -- for ghc <= 8.2
 import Data.Semigroup ((<>))
