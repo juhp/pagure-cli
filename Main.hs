@@ -23,8 +23,11 @@ main =
   simpleCmdArgs Nothing "Pagure client" "Simple pagure CLI" $
     subcommands
     [Subcommand "list" "list projects" $
-     listProjects <$> switchWith 'd' "detail" "Show all details" <*> strOptionalWith 'o' "owner" "OWNER" "Projects with certain owner" "!orphan" <*> strArg "PATTERN"]
+     listProjects <$> detailsOpt <*> ownerOpt <*> strArg "PATTERN"]
     where
+      detailsOpt = switchWith 'd' "detail" "Show all details"
+      ownerOpt = strOptionalWith 'o' "owner" "OWNER" "Projects with certain owner" "!orphan"
+
       listProjects :: Bool -> String -> String -> IO ()
       listProjects detail owner pat = do
         mgr <- newManager tlsManagerSettings
