@@ -10,7 +10,7 @@ license-file:        LICENSE
 author:              Jens Petersen
 maintainer:          juhpetersen@gmail.com
 copyright:           2019 Jens Petersen
-category:            Utiliy
+category:            Utility
 build-type:          Simple
 extra-doc-files:     README.md
                    , CHANGELOG.md
