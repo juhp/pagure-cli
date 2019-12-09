@@ -16,6 +16,7 @@ import Data.Maybe (fromMaybe)
 #else
 import Data.Semigroup ((<>))
 #endif
+import Data.List (isSuffixOf)
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -28,10 +29,6 @@ import SimpleCmdArgs
 import Paths_pagure_cli (version)
 
 data Filter = Owner String (Maybe String) | All String
-
-render :: Filter -> String
-render (All s) = "owner=!orphan&pattern=" <> s
-render (Owner n mpat) = "owner=" <> n <> maybe "" ("&pattern=" <>) mpat
 
 main :: IO ()
 main =
@@ -55,6 +52,11 @@ listProjects :: String -> Bool -> Bool -> Bool -> Filter -> IO ()
 listProjects server count detail showurl search = do
   let query = "projects?namespace=rpms&fork=0&" <> render search <> "&"
   listPagure server count detail showurl query ("pagination", "page", "projects")
+  where
+    render :: Filter -> String
+    -- hack until internal server API upgraded to >=0.29
+    render (All s) = (if ".redhat.com" `isSuffixOf` server then "" else "owner=!orphan&") <> "pattern=" <> s
+    render (Owner n mpat) = "owner=" <> n <> maybe "" ("&pattern=" <>) mpat
 
 userRepos :: String -> Bool -> Bool -> Bool -> String -> IO ()
 userRepos server count detail showurl user = do
