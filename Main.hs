@@ -6,12 +6,18 @@ module Main (main) where
 #else
 import Control.Applicative ((<$>), (<*>))
 #endif
+#if (defined(MIN_VERSION_simple_cmd_args) && MIN_VERSION_simple_cmd_args(0,1,3))
+#else
+import Control.Applicative ((<|>))
+#endif
+import Control.Monad (when)
 import Data.Maybe (fromMaybe)
 #if (defined(MIN_VERSION_base) && MIN_VERSION_base(4,11,0))
 #else
 import Data.Semigroup ((<>))
 #endif
 import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
@@ -21,30 +27,59 @@ import SimpleCmdArgs
 
 import Paths_pagure_cli (version)
 
+data Filter = Owner String (Maybe String) | All String
+
+render :: Filter -> String
+render (All s) = "owner=!orphan&pattern=" <> s
+render (Owner n mpat) = "owner=" <> n <> maybe "" ("&pattern=" <>) mpat
+
 main :: IO ()
 main =
   simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
-     listProjects <$> detailsOpt <*> ownerOpt <*> strArg "PATTERN"
-    where
-      detailsOpt = switchWith 'd' "detail" "Show all details"
-      ownerOpt = strOptionalWith 'o' "owner" "OWNER" "Projects with certain owner" "!orphan"
+  subcommands
+  [ Subcommand "list" "list projects" $
+    listProjects <$> countOpt <*> detailsOpt <*> urlOpt <*> searchFilter
+  , Subcommand "user" "user repos" $
+    userRepos <$> countOpt <*> detailsOpt <*> urlOpt <*> strArg "USER"
+  ]
+  where
+    countOpt = switchWith 'c' "count" "Show number only"
+    detailsOpt = switchWith 'd' "detail" "Show all details"
+    urlOpt = switchWith 'u' "url" "Show url"
+    ownerOpt = strOptionWith 'o' "owner" "OWNER" "Projects with certain owner"
+    searchFilter = All <$> strArg "PATTERN" <|>
+                   Owner <$> ownerOpt <*> optional (strArg "PATTERN")
 
-      listProjects :: Bool -> String -> String -> IO ()
-      listProjects detail owner pat = do
-        mgr <- newManager tlsManagerSettings
-        let url = "https://src.fedoraproject.org/api/0/projects?namespace=rpms&fork=0&per_page=100" <> "&owner=" <> owner <> "&pattern=" <> pat
-        req1 <- parseRequest url
-        res1 <- responseBody <$> httpLbs req1 mgr
-        if detail then B.putStrLn res1
-          else do
-          let pages = res1 ^? key "pagination" . key "pages" . _Integer
-          printProjects res1
-          mapM_ (nextPage mgr url) [2..(fromMaybe 0 pages)]
-            where
-              nextPage mgr url p = do
-                req <- parseRequest $ url <> "&page=" <> show p
-                res <- responseBody <$> httpLbs req mgr
-                printProjects res
+listProjects :: Bool -> Bool -> Bool -> Filter -> IO ()
+listProjects count detail showurl search = do
+  let url = "https://src.fedoraproject.org/api/0/projects?namespace=rpms&fork=0&" <> render search <> "&"
+  listPagure count detail showurl url ("pagination", "page", "projects")
 
-              printProjects res =
-                mapM_ T.putStrLn $ res ^.. key "projects" . values . key "name" . _String
+userRepos :: Bool -> Bool -> Bool -> String -> IO ()
+userRepos count detail showurl user = do
+  let url = "https://src.fedoraproject.org/api/0/user/" <> user <> "?"
+  listPagure count detail showurl url ("repos_pagination", "repopage", "repos")
+
+listPagure :: Bool -> Bool -> Bool -> String -> (String,String,String) -> IO ()
+listPagure count detail showurl u (pagination,paging,object) = do
+  let url = u <> "per_page=" <> if count then "1" else "100"
+  when showurl $ putStrLn url
+  req1 <- parseRequest url
+  mgr <- newManager tlsManagerSettings
+  res1 <- responseBody <$> httpLbs req1 mgr
+  if detail then B.putStrLn res1
+    else do
+    let pages = res1 ^? key (T.pack pagination) . key "pages" . _Integer
+    if count
+      then print $ fromMaybe (error "not found") pages
+      else do
+      printRepos res1
+      mapM_ (nextPage mgr url) [2..(fromMaybe 0 pages)]
+     where
+        nextPage mgr url p = do
+          req <- parseRequest $ url <> "&" <> paging <> "=" <> show p
+          res <- responseBody <$> httpLbs req mgr
+          printRepos res
+
+        printRepos res =
+          mapM_ T.putStrLn $ res ^.. key (T.pack object) . values . key "name" . _String
