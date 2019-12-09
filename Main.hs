@@ -24,9 +24,7 @@ import Paths_pagure_cli (version)
 main :: IO ()
 main =
   simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
-    subcommands
-    [Subcommand "list" "list projects" $
-     listProjects <$> detailsOpt <*> ownerOpt <*> strArg "PATTERN"]
+     listProjects <$> detailsOpt <*> ownerOpt <*> strArg "PATTERN"
     where
       detailsOpt = switchWith 'd' "detail" "Show all details"
       ownerOpt = strOptionalWith 'o' "owner" "OWNER" "Projects with certain owner" "!orphan"
