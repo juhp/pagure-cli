@@ -38,31 +38,32 @@ main =
   simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
   subcommands
   [ Subcommand "list" "list projects" $
-    listProjects <$> countOpt <*> detailsOpt <*> urlOpt <*> searchFilter
+    listProjects <$> serverOpt <*> countOpt <*> detailsOpt <*> urlOpt <*> searchFilter
   , Subcommand "user" "user repos" $
-    userRepos <$> countOpt <*> detailsOpt <*> urlOpt <*> strArg "USER"
+    userRepos <$> serverOpt <*> countOpt <*> detailsOpt <*> urlOpt <*> strArg "USER"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
     detailsOpt = switchWith 'd' "detail" "Show all details"
     urlOpt = switchWith 'u' "url" "Show url"
     ownerOpt = strOptionWith 'o' "owner" "OWNER" "Projects with certain owner"
+    serverOpt = strOptionalWith 's' "server" "SERVER" "Pagure server" "src.fedoraproject.org"
     searchFilter = All <$> strArg "PATTERN" <|>
                    Owner <$> ownerOpt <*> optional (strArg "PATTERN")
 
-listProjects :: Bool -> Bool -> Bool -> Filter -> IO ()
-listProjects count detail showurl search = do
-  let url = "https://src.fedoraproject.org/api/0/projects?namespace=rpms&fork=0&" <> render search <> "&"
-  listPagure count detail showurl url ("pagination", "page", "projects")
+listProjects :: String -> Bool -> Bool -> Bool -> Filter -> IO ()
+listProjects server count detail showurl search = do
+  let query = "projects?namespace=rpms&fork=0&" <> render search <> "&"
+  listPagure server count detail showurl query ("pagination", "page", "projects")
 
-userRepos :: Bool -> Bool -> Bool -> String -> IO ()
-userRepos count detail showurl user = do
-  let url = "https://src.fedoraproject.org/api/0/user/" <> user <> "?"
-  listPagure count detail showurl url ("repos_pagination", "repopage", "repos")
+userRepos :: String -> Bool -> Bool -> Bool -> String -> IO ()
+userRepos server count detail showurl user = do
+  let query = "user/" <> user <> "?"
+  listPagure server count detail showurl query ("repos_pagination", "repopage", "repos")
 
-listPagure :: Bool -> Bool -> Bool -> String -> (String,String,String) -> IO ()
-listPagure count detail showurl u (pagination,paging,object) = do
-  let url = u <> "per_page=" <> if count then "1" else "100"
+listPagure :: String -> Bool -> Bool -> Bool -> String -> (String,String,String) -> IO ()
+listPagure server count detail showurl query (pagination,paging,object) = do
+  let url = "https://" <> server <> "/api/0/" <> query <> "per_page=" <> if count then "1" else "100"
   when showurl $ putStrLn url
   req1 <- parseRequest url
   mgr <- newManager tlsManagerSettings
