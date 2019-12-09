@@ -1,6 +1,12 @@
 language: haskell
 
+cache:
+  directories:
+  - "$HOME/.cabal"
+  - "$HOME/.ghc"
+
 ghc:
+- 8.8.1
 - 8.6.5
 - 8.4.4
 - 8.2.2
@@ -9,8 +15,8 @@ ghc:
 - 7.8.4
 - 7.6.3
 
-script:
-- cabal configure && cabal build
-
 install:
-- true
+- cabal install --only-dependencies
+
+script:
+- cabal build
