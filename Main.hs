@@ -11,6 +11,7 @@ import Data.Maybe (fromMaybe)
 #else
 import Data.Semigroup ((<>))
 #endif
+import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Text.IO as T
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
@@ -18,11 +19,11 @@ import Lens.Micro
 import Lens.Micro.Aeson
 import SimpleCmdArgs
 
-import qualified Data.ByteString.Lazy.Char8 as B
+import Paths_pagure_cli (version)
 
 main :: IO ()
 main =
-  simpleCmdArgs Nothing "Pagure client" "Simple pagure CLI" $
+  simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
     subcommands
     [Subcommand "list" "list projects" $
      listProjects <$> detailsOpt <*> ownerOpt <*> strArg "PATTERN"]
