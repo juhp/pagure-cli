@@ -1,4 +1,4 @@
-# pagure
+# pagure-cli
 
 [![Hackage](https://img.shields.io/hackage/v/pagure-cli.svg)](https://hackage.haskell.org/package/pagure-cli)
 [![GPL-2 license](https://img.shields.io/badge/license-GPL--2-blue.svg)](LICENSE)
@@ -6,7 +6,8 @@
 [![Stackage Nightly](http://stackage.org/package/pagure-cli/badge/nightly)](http://stackage.org/nightly/package/pagure-cli)
 [![Build status](https://secure.travis-ci.org/juhp/pagure-cli.svg)](https://travis-ci.org/juhp/pagure-cli)
 
-Pagure client
+A [pagure](https://docs.pagure.org/pagure/) client for querying
+projects and users.
 
 ## Usage examples
 It defaults to using the src.fedoraproject.org Pagure instance.
