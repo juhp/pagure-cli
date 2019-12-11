@@ -2,14 +2,16 @@
 
 module Main (main) where
 
+import Control.Applicative (
 #if (defined(MIN_VERSION_base) && MIN_VERSION_base(4,8,0))
 #else
-import Control.Applicative ((<$>), (<*>))
+                            (<$>), (<*>),
 #endif
 #if (defined(MIN_VERSION_simple_cmd_args) && MIN_VERSION_simple_cmd_args(0,1,3))
 #else
-import Control.Applicative ((<|>))
+                            (<|>)
 #endif
+                           )
 import Control.Monad (when)
 import Data.Maybe (fromMaybe)
 #if (defined(MIN_VERSION_base) && MIN_VERSION_base(4,11,0))
