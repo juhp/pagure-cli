@@ -39,3 +39,8 @@ To build from source you will need cabal-install and ghc, or stack.
 `cabal install pagure-cli` or `stack install pagure-cli`
 
 (or directly in the git source without the package name).
+
+## Binaries
+
+If you are using Fedora you can install the package from my
+[copr repo](https://copr.fedorainfracloud.org/coprs/petersen/pagure-cli/).
