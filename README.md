@@ -29,3 +29,11 @@ List projects on pagure.io:
 $ pagure list -s pagure.io \*
 :
 ```
+
+## Installation
+
+To build from source you will need cabal-install and ghc, or stack.
+
+`cabal install pagure-cli` or `stack install pagure-cli`
+
+(or directly in the git source without the package name).
