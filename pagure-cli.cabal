@@ -3,8 +3,8 @@ name:                pagure-cli
 version:             0.1
 synopsis:            Pagure client
 description:         Pagure client
-homepage:            https://github.com/juhp/pagure
-bug-reports:         https://github.com/juhp/pagure/issues
+homepage:            https://github.com/juhp/pagure-cli
+bug-reports:         https://github.com/juhp/pagure-cli/issues
 license:             GPL-2
 license-file:        LICENSE
 author:              Jens Petersen
@@ -18,7 +18,7 @@ tested-with:         GHC == 7.10.3, GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4
 
 source-repository head
   type:                git
-  location:            https://github.com/juhp/pagure.git
+  location:            https://github.com/juhp/pagure-cli.git
 
 executable pagure
   main-is:             Main.hs
