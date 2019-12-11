@@ -7,3 +7,29 @@
 [![Build status](https://secure.travis-ci.org/juhp/pagure.svg)](https://travis-ci.org/juhp/pagure)
 
 Pagure client
+
+## Usage examples
+It defaults to using the src.fedoraproject.org Pagure instance.
+
+List or search for source packages:
+
+```
+$ pagure list emacs\*
+emacs
+:
+```
+(can also filter by owner).
+
+List packages by user:
+
+```
+$ pagure user --count mattdm
+19
+```
+
+List projects on pagure.io:
+
+```
+$ pagure list -s pagure.io \*
+:
+```
