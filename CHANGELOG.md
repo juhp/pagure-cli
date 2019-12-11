@@ -1,6 +1,4 @@
 # Changelog
 
-`pagure` uses [PVP Versioning](https://pvp.haskell.org).
-
-## 0.0.0
-- Initially created.
+## 0.1 (2019-12-11)
+- initial release with list and user commands
