@@ -40,6 +40,8 @@ main =
     listProjects <$> serverOpt <*> countOpt <*> detailsOpt <*> urlOpt <*> searchFilter
   , Subcommand "user" "user repos" $
     userRepos <$> serverOpt <*> countOpt <*> detailsOpt <*> urlOpt <*> strArg "USER"
+  , Subcommand "branches" "show project branches" $
+    repoBranches <$> serverOpt <*> detailsOpt <*> urlOpt <*> strArg "REPO"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
@@ -90,3 +92,19 @@ pagureQuery showurl url = do
   when showurl $ putStrLn url
   req <- parseRequest url
   getResponseBody <$> httpLBS req
+
+repoBranches :: String -> Bool -> Bool -> String -> IO ()
+repoBranches server detail showurl repo = do
+  let query = "rpms" </> repo </> "git/branches"
+  querySingle server detail showurl query
+
+querySingle :: String -> Bool -> Bool -> String -> IO ()
+querySingle server detail showurl query = do
+  let url = "https://" <> server </> "api/0" </> query
+  res <- pagureQuery showurl url
+  if detail then B.putStrLn res
+    else
+    printRepos res
+  where
+    printRepos res =
+      mapM_ T.putStrLn $ res ^.. key "branches" . values . _String
