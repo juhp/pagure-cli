@@ -22,11 +22,11 @@ import Data.List (isSuffixOf)
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Network.HTTP.Client
-import Network.HTTP.Client.TLS
+import Network.HTTP.Simple
 import Lens.Micro
 import Lens.Micro.Aeson
 import SimpleCmdArgs
+import System.FilePath ((</>))
 
 import Paths_pagure_cli (version)
 
@@ -53,7 +53,7 @@ main =
 listProjects :: String -> Bool -> Bool -> Bool -> Filter -> IO ()
 listProjects server count detail showurl search = do
   let query = "projects?namespace=rpms&fork=0&" <> render search <> "&"
-  listPagure server count detail showurl query ("pagination", "page", "projects")
+  queryPaged server count detail showurl query ("pagination", "page", "projects")
   where
     render :: Filter -> String
     -- hack until internal server API upgraded to >=0.29
@@ -62,16 +62,13 @@ listProjects server count detail showurl search = do
 
 userRepos :: String -> Bool -> Bool -> Bool -> String -> IO ()
 userRepos server count detail showurl user = do
-  let query = "user/" <> user <> "?"
-  listPagure server count detail showurl query ("repos_pagination", "repopage", "repos")
+  let query = "user" </> user <> "?"
+  queryPaged server count detail showurl query ("repos_pagination", "repopage", "repos")
 
-listPagure :: String -> Bool -> Bool -> Bool -> String -> (String,String,String) -> IO ()
-listPagure server count detail showurl query (pagination,paging,object) = do
-  let url = "https://" <> server <> "/api/0/" <> query <> "per_page=" <> if count then "1" else "100"
-  when showurl $ putStrLn url
-  req1 <- parseRequest url
-  mgr <- newManager tlsManagerSettings
-  res1 <- responseBody <$> httpLbs req1 mgr
+queryPaged :: String -> Bool -> Bool -> Bool -> String -> (String,String,String) -> IO ()
+queryPaged server count detail showurl query (pagination,paging,object) = do
+  let url = "https://" <> server </> "api/0" </> query <> "per_page=" <> if count then "1" else "100"
+  res1 <- pagureQuery showurl url
   if detail then B.putStrLn res1
     else do
     let pages = res1 ^? key (T.pack pagination) . key "pages" . _Integer
@@ -79,12 +76,17 @@ listPagure server count detail showurl query (pagination,paging,object) = do
       then print $ fromMaybe (error "not found") pages
       else do
       printRepos res1
-      mapM_ (nextPage mgr url) [2..(fromMaybe 0 pages)]
+      mapM_ (nextPage url) [2..(fromMaybe 0 pages)]
      where
-        nextPage mgr url p = do
-          req <- parseRequest $ url <> "&" <> paging <> "=" <> show p
-          res <- responseBody <$> httpLbs req mgr
+        nextPage url p = do
+          res <- pagureQuery False $ url <> "&" <> paging <> "=" <> show p
           printRepos res
 
         printRepos res =
           mapM_ T.putStrLn $ res ^.. key (T.pack object) . values . key "name" . _String
+
+pagureQuery :: Bool -> String -> IO B.ByteString
+pagureQuery showurl url = do
+  when showurl $ putStrLn url
+  req <- parseRequest url
+  getResponseBody <$> httpLBS req
