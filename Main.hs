@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
 
@@ -13,18 +14,18 @@ import Control.Applicative (
 #endif
                            )
 import Control.Monad (when)
-import Data.Maybe (fromMaybe)
+import Data.Aeson (Value)
+import qualified Data.ByteString.Char8 as B
+import Data.Maybe
 #if (defined(MIN_VERSION_base) && MIN_VERSION_base(4,11,0))
 #else
 import Data.Semigroup ((<>))
 #endif
-import Data.List (isSuffixOf)
-import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Network.HTTP.Simple
 import Lens.Micro
 import Lens.Micro.Aeson
+import Network.HTTP.Simple
 import SimpleCmdArgs
 import System.FilePath ((</>))
 
@@ -37,15 +38,19 @@ main =
   simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
   subcommands
   [ Subcommand "list" "list projects" $
-    listProjects <$> serverOpt <*> countOpt <*> detailsOpt <*> urlOpt <*> searchFilter
+    listProjects <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> searchFilter
   , Subcommand "user" "user repos" $
-    userRepos <$> serverOpt <*> countOpt <*> detailsOpt <*> urlOpt <*> strArg "USER"
+    userRepos <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "USER"
+--  , Subcommand "clone" "clone project" $
+--    cloneProject <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "USER"
   , Subcommand "branches" "show project branches" $
-    repoBranches <$> serverOpt <*> detailsOpt <*> urlOpt <*> strArg "REPO"
+    repoBranches <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO"
+  , Subcommand "issues" "list project issues" $
+    projectIssues <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date")
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
-    detailsOpt = switchWith 'd' "detail" "Show all details"
+    jsonOpt = switchWith 'j' "json" "Print raw json response"
     urlOpt = switchWith 'u' "url" "Show url"
     ownerOpt = strOptionWith 'o' "owner" "OWNER" "Projects with certain owner"
     serverOpt = strOptionalWith 's' "server" "SERVER" "Pagure server" "src.fedoraproject.org"
@@ -53,58 +58,95 @@ main =
                    Owner <$> ownerOpt <*> optional (strArg "PATTERN")
 
 listProjects :: String -> Bool -> Bool -> Bool -> Filter -> IO ()
-listProjects server count detail showurl search = do
-  let query = "projects?namespace=rpms&fork=0&" <> render search <> "&"
-  queryPaged server count detail showurl query ("pagination", "page", "projects")
+listProjects server count json showurl search = do
+  let path = "projects"
+      params = ("fork", Just "0") : owner search
+  results <- queryPaged server count showurl path params ("pagination", "page")
+  mapM_ (printResults json "projects" "name") results
   where
-    render :: Filter -> String
-    -- hack until internal server API upgraded to >=0.29
-    render (All s) = (if ".redhat.com" `isSuffixOf` server then "" else "owner=!orphan&") <> "pattern=" <> s
-    render (Owner n mpat) = "owner=" <> n <> maybe "" ("&pattern=" <>) mpat
+    owner :: Filter -> Query
+    -- (!orphan only works on pagure >=0.29)
+    owner (All s) =
+      [("owner", Just "!orphan") | server == "src.fedoraproject.org"] ++
+      [("pattern", Just (B.pack s))]
+    owner (Owner n mpat) =
+      ("owner", Just (B.pack n)) : maybeKey "pattern" mpat
 
 userRepos :: String -> Bool -> Bool -> Bool -> String -> IO ()
-userRepos server count detail showurl user = do
-  let query = "user" </> user <> "?"
-  queryPaged server count detail showurl query ("repos_pagination", "repopage", "repos")
+userRepos server count json showurl user = do
+  let path = "user" </> user
+  results <- queryPaged server count showurl path [] ("repos_pagination", "repopage")
+  mapM_ (printResults json "repos" "name") results
 
-queryPaged :: String -> Bool -> Bool -> Bool -> String -> (String,String,String) -> IO ()
-queryPaged server count detail showurl query (pagination,paging,object) = do
-  let url = "https://" <> server </> "api/0" </> query <> "per_page=" <> if count then "1" else "100"
-  res1 <- pagureQuery showurl url
-  if detail then B.putStrLn res1
-    else do
-    let pages = res1 ^? key (T.pack pagination) . key "pages" . _Integer
-    if count
-      then print $ fromMaybe (error "not found") pages
+maybeKey :: String -> Maybe String -> Query
+maybeKey _ Nothing = []
+maybeKey k mval = [(B.pack k, fmap B.pack mval)]
+
+printResults :: Bool -> String -> String -> Value -> IO ()
+printResults json object key' result =
+  if json then print result
+  else
+    mapM_ T.putStrLn $ result ^.. key (T.pack object) . values . key (T.pack key') . _String
+
+projectIssues :: String -> Bool -> Bool -> Bool -> String -> Bool -> Maybe String -> Maybe String -> IO ()
+projectIssues server count json showurl repo allstatus mauthor msince = do
+  let path = repo </> "issues"
+      params = [("status", Just "all") | allstatus] ++
+               maybeKey "author" mauthor ++ maybeKey "since" msince
+  results <- queryPaged server count showurl path params ("pagination", "page")
+  mapM_ (printIssues "issues") results
+  where
+    printIssues :: String -> Value -> IO ()
+    printIssues object result =
+      if json then print result
       else do
-      printRepos res1
-      mapM_ (nextPage url) [2..(fromMaybe 0 pages)]
-     where
-        nextPage url p = do
-          res <- pagureQuery False $ url <> "&" <> paging <> "=" <> show p
-          printRepos res
+        let ids = result ^.. key (T.pack object) . values . key (T.pack "id") . _Integer
+            titles = result ^.. key (T.pack object) . values . key (T.pack "title") . _String
+            statuses = result ^.. key (T.pack object) . values . key (T.pack "status") . _String
+        mapM_ printIssue $ zip3 ids titles statuses
 
-        printRepos res =
-          mapM_ T.putStrLn $ res ^.. key (T.pack object) . values . key "name" . _String
+    printIssue :: (Integer, T.Text, T.Text) -> IO ()
+    printIssue (issue, title, status) = do
+      T.putStrLn $ "\"" <> title <> "\""
+      putStrLn $ "https://" <> server </> repo </> "issue" </> show issue <> " (" <> T.unpack status <> ")"
 
-pagureQuery :: Bool -> String -> IO B.ByteString
-pagureQuery showurl url = do
+queryPaged :: String -> Bool -> Bool -> String -> Query -> (String,String) -> IO [Value]
+queryPaged server count showurl path params (pagination,paging) = do
+  res1 <- pagureQuery showurl server path (params ++ [("per_page", Just (if count then "1" else "100"))])
+  let mpages = res1 ^? key (T.pack pagination) . key "pages" . _Integer
+  if count
+    then do
+    print $ fromMaybe (error' "pages not found") mpages
+    return []
+    else do
+    rest <- mapM nextPage [2..(fromMaybe 0 mpages)]
+    return $ res1 : rest
+      where
+        nextPage p =
+          pagureQuery False server path (params ++ [("per_page", Just "100")] ++ maybeKey paging (Just (show p)))
+
+pagureQuery :: Bool -> String -> String -> Query -> IO Value
+pagureQuery showurl server path params = do
+  let url = "https://" <> server </> "api/0" </> path
   when showurl $ putStrLn url
-  req <- parseRequest url
-  getResponseBody <$> httpLBS req
+  req <- setRequestQueryString params <$> parseRequest url
+  getResponseBody <$> httpJSON req
 
 repoBranches :: String -> Bool -> Bool -> String -> IO ()
-repoBranches server detail showurl repo = do
-  let query = "rpms" </> repo </> "git/branches"
-  querySingle server detail showurl query
+repoBranches server json showurl repo = do
+  let path = repo </> "git/branches"
+  res <- pagureQuery showurl server path []
+  printKeyList json "branches" res
 
-querySingle :: String -> Bool -> Bool -> String -> IO ()
-querySingle server detail showurl query = do
-  let url = "https://" <> server </> "api/0" </> query
-  res <- pagureQuery showurl url
-  if detail then B.putStrLn res
-    else
-    printRepos res
-  where
-    printRepos res =
-      mapM_ T.putStrLn $ res ^.. key "branches" . values . _String
+printKeyList :: Bool -> String -> Value -> IO ()
+printKeyList json key' res =
+  if json then print res
+    else mapM_ T.putStrLn $ res ^.. key (T.pack key') . values . _String
+
+-- from simple-cmd
+error' :: String -> a
+#if (defined(MIN_VERSION_base) && MIN_VERSION_base(4,9,0))
+error' = errorWithoutStackTrace
+#else
+error' = error
+#endif

@@ -24,8 +24,9 @@ source-repository head
 executable pagure
   main-is:             Main.hs
 
-  build-depends:       bytestring
+  build-depends:       aeson
                      , base < 5
+                     , bytestring
                      , filepath
                      , http-conduit
                      , microlens
