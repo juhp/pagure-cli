@@ -47,7 +47,7 @@ main =
   , Subcommand "branches" "show project branches" $
     repoBranches <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
-    projectIssues <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date")
+    projectIssues <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
   , Subcommand "users" "find users" $
     users <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "PATTERN"
   ]
@@ -96,8 +96,9 @@ printResult :: String -> String -> Value -> IO ()
 printResult object key' result =
   mapM_ T.putStrLn $ result ^.. key (T.pack object) . values . key (T.pack key') . _String
 
-projectIssues :: String -> Bool -> Bool -> Bool -> String -> Bool -> Maybe String -> Maybe String -> IO ()
-projectIssues server count json showurl repo allstatus mauthor msince = do
+-- FIXME limit max number of issues
+projectIssues :: String -> Bool -> Bool -> Bool -> String -> Bool -> Maybe String -> Maybe String -> Maybe String -> IO ()
+projectIssues server count json showurl repo allstatus mauthor msince mpat = do
   let path = repo </> "issues"
       params = [("status", Just "all") | allstatus] ++
                maybeKey "author" mauthor ++ maybeKey "since" msince
@@ -113,9 +114,10 @@ projectIssues server count json showurl repo allstatus mauthor msince = do
       mapM_ printIssue $ zip3 ids titles statuses
 
     printIssue :: (Integer, T.Text, T.Text) -> IO ()
-    printIssue (issue, title, status) = do
-      T.putStrLn $ "\"" <> title <> "\""
-      putStrLn $ "https://" <> server </> repo </> "issue" </> show issue <> " (" <> T.unpack status <> ")"
+    printIssue (issue, title, status) =
+      when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $ do
+        T.putStrLn $ "\"" <> title <> "\""
+        putStrLn $ "https://" <> server </> repo </> "issue" </> show issue <> " (" <> T.unpack status <> ")"
 
 -- FIXME limit max number of pages (10?) or --pages
 queryPaged :: String -> Bool -> Bool -> Bool -> String -> Query -> (String,String) -> IO [Value]
