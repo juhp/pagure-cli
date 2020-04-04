@@ -39,7 +39,7 @@ main =
   simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
   subcommands
   [ Subcommand "list" "list projects" $
-    listProjects <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> searchFilter
+    listProjects <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> optional namespaceOpt <*> searchFilter
   , Subcommand "user" "user repos" $
     userRepos <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "USER"
 --  , Subcommand "clone" "clone project" $
@@ -55,15 +55,20 @@ main =
     countOpt = switchWith 'c' "count" "Show number only"
     jsonOpt = switchWith 'j' "json" "Print raw json response"
     urlOpt = switchWith 'u' "url" "Show url"
+    namespaceOpt = strOptionWith 'n' "namespace" "NAMESPACE" "Specify project repo namespace"
     ownerOpt = strOptionWith 'o' "owner" "OWNER" "Projects with certain owner"
-    serverOpt = strOptionalWith 's' "server" "SERVER" "Pagure server" "src.fedoraproject.org"
+    serverOpt = strOptionalWith 's' "server" "SERVER" "Pagure server" srcFedoraprojectOrg
     searchFilter = All <$> strArg "PATTERN" <|>
                    Owner <$> ownerOpt <*> optional (strArg "PATTERN")
 
-listProjects :: String -> Bool -> Bool -> Bool -> Filter -> IO ()
-listProjects server count json showurl search = do
+srcFedoraprojectOrg :: String
+srcFedoraprojectOrg = "src.fedoraproject.org"
+
+-- FIXME show namespace?
+listProjects :: String -> Bool -> Bool -> Bool -> Maybe String -> Filter -> IO ()
+listProjects server count json showurl mnamespace search = do
   let path = "projects"
-      params = ("fork", Just "0") : owner search
+      params = ("fork", Just "0") : owner search ++ maybeKey "namespace" mnamespace
   results <- queryPaged server count showurl json path params ("pagination", "page")
   unless json $
     mapM_ (printResult "projects" "name") results
@@ -71,7 +76,7 @@ listProjects server count json showurl search = do
     owner :: Filter -> Query
     -- (!orphan only works on pagure >=0.29)
     owner (All s) =
-      [("owner", Just "!orphan") | server == "src.fedoraproject.org"] ++
+      [("owner", Just "!orphan") | server == srcFedoraprojectOrg] ++
       [("pattern", Just (B.pack s))]
     owner (Owner n mpat) =
       ("owner", Just (B.pack n)) : maybeKey "pattern" mpat
