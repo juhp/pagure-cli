@@ -150,7 +150,10 @@ pagureQuery showurl server json path params = do
 
 repoBranches :: String -> Bool -> Bool -> String -> IO ()
 repoBranches server json showurl repo = do
-  let path = repo </> "git/branches"
+  let namespace =
+        if server == srcFedoraprojectOrg && '/' `notElem` repo
+        then "rpms/" else ""
+      path = namespace ++ repo </> "git/branches"
   res <- pagureQuery showurl server json path []
   unless json $
     printKeyList "branches" res
