@@ -32,7 +32,7 @@ executable pagure
                      , microlens
                      , microlens-aeson
                      , optparse-applicative
-                     , simple-cmd-args >= 0.1.2
+                     , simple-cmd-args >= 0.1.6
                      , text
   if impl(ghc<8.0)
       build-depends: semigroups
