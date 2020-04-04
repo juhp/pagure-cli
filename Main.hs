@@ -13,9 +13,10 @@ import Control.Applicative (
                             (<|>)
 #endif
                            )
-import Control.Monad (when)
-import Data.Aeson (Value)
+import Control.Monad (unless, when)
+import Data.Aeson (eitherDecode, Value)
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Maybe
 #if (defined(MIN_VERSION_base) && MIN_VERSION_base(4,11,0))
 #else
@@ -63,8 +64,9 @@ listProjects :: String -> Bool -> Bool -> Bool -> Filter -> IO ()
 listProjects server count json showurl search = do
   let path = "projects"
       params = ("fork", Just "0") : owner search
-  results <- queryPaged server count showurl path params ("pagination", "page")
-  mapM_ (printResults json "projects" "name") results
+  results <- queryPaged server count showurl json path params ("pagination", "page")
+  unless json $
+    mapM_ (printResult "projects" "name") results
   where
     owner :: Filter -> Query
     -- (!orphan only works on pagure >=0.29)
@@ -77,44 +79,43 @@ listProjects server count json showurl search = do
 userRepos :: String -> Bool -> Bool -> Bool -> String -> IO ()
 userRepos server count json showurl user = do
   let path = "user" </> user
-  results <- queryPaged server count showurl path [] ("repos_pagination", "repopage")
-  mapM_ (printResults json "repos" "name") results
+  results <- queryPaged server count showurl json path [] ("repos_pagination", "repopage")
+  unless json $
+    mapM_ (printResult "repos" "name") results
 
 maybeKey :: String -> Maybe String -> Query
 maybeKey _ Nothing = []
 maybeKey k mval = [(B.pack k, fmap B.pack mval)]
 
-printResults :: Bool -> String -> String -> Value -> IO ()
-printResults json object key' result =
-  if json then print result
-  else
-    mapM_ T.putStrLn $ result ^.. key (T.pack object) . values . key (T.pack key') . _String
+printResult :: String -> String -> Value -> IO ()
+printResult object key' result =
+  mapM_ T.putStrLn $ result ^.. key (T.pack object) . values . key (T.pack key') . _String
 
 projectIssues :: String -> Bool -> Bool -> Bool -> String -> Bool -> Maybe String -> Maybe String -> IO ()
 projectIssues server count json showurl repo allstatus mauthor msince = do
   let path = repo </> "issues"
       params = [("status", Just "all") | allstatus] ++
                maybeKey "author" mauthor ++ maybeKey "since" msince
-  results <- queryPaged server count showurl path params ("pagination", "page")
-  mapM_ (printIssues "issues") results
+  results <- queryPaged server count showurl json path params ("pagination", "page")
+  unless json $
+    mapM_ (printIssues "issues") results
   where
     printIssues :: String -> Value -> IO ()
-    printIssues object result =
-      if json then print result
-      else do
-        let ids = result ^.. key (T.pack object) . values . key (T.pack "id") . _Integer
-            titles = result ^.. key (T.pack object) . values . key (T.pack "title") . _String
-            statuses = result ^.. key (T.pack object) . values . key (T.pack "status") . _String
-        mapM_ printIssue $ zip3 ids titles statuses
+    printIssues object result = do
+      let ids = result ^.. key (T.pack object) . values . key (T.pack "id") . _Integer
+          titles = result ^.. key (T.pack object) . values . key (T.pack "title") . _String
+          statuses = result ^.. key (T.pack object) . values . key (T.pack "status") . _String
+      mapM_ printIssue $ zip3 ids titles statuses
 
     printIssue :: (Integer, T.Text, T.Text) -> IO ()
     printIssue (issue, title, status) = do
       T.putStrLn $ "\"" <> title <> "\""
       putStrLn $ "https://" <> server </> repo </> "issue" </> show issue <> " (" <> T.unpack status <> ")"
 
-queryPaged :: String -> Bool -> Bool -> String -> Query -> (String,String) -> IO [Value]
-queryPaged server count showurl path params (pagination,paging) = do
-  res1 <- pagureQuery showurl server path (params ++ [("per_page", Just (if count then "1" else "100"))])
+-- FIXME limit max number of pages (10?) or --pages
+queryPaged :: String -> Bool -> Bool -> Bool -> String -> Query -> (String,String) -> IO [Value]
+queryPaged server count showurl json path params (pagination,paging) = do
+  res1 <- pagureQuery showurl server json path (params ++ [("per_page", Just (if count then "1" else "100"))])
   let mpages = res1 ^? key (T.pack pagination) . key "pages" . _Integer
   if count
     then do
@@ -125,32 +126,39 @@ queryPaged server count showurl path params (pagination,paging) = do
     return $ res1 : rest
       where
         nextPage p =
-          pagureQuery False server path (params ++ [("per_page", Just "100")] ++ maybeKey paging (Just (show p)))
+          pagureQuery False server json path (params ++ [("per_page", Just "100")] ++ maybeKey paging (Just (show p)))
 
-pagureQuery :: Bool -> String -> String -> Query -> IO Value
-pagureQuery showurl server path params = do
+pagureQuery :: Bool -> String -> Bool -> String -> Query -> IO Value
+pagureQuery showurl server json path params = do
   let url = "https://" <> server </> "api/0" </> path
   when showurl $ putStrLn url
   req <- setRequestQueryString params <$> parseRequest url
-  getResponseBody <$> httpJSON req
+  if json then do
+    res <- getResponseBody <$> httpLBS req
+    BL.putStrLn res
+    case eitherDecode res of
+      Left e -> error' e
+      Right v -> return v
+    else getResponseBody <$> httpJSON req
 
 repoBranches :: String -> Bool -> Bool -> String -> IO ()
 repoBranches server json showurl repo = do
   let path = repo </> "git/branches"
-  res <- pagureQuery showurl server path []
-  printKeyList json "branches" res
+  res <- pagureQuery showurl server json path []
+  unless json $
+    printKeyList "branches" res
 
 users :: String -> Bool -> Bool -> String -> IO ()
 users server json showurl pat = do
   let path = "users"
       params = maybeKey "pattern" $ Just pat
-  res <- pagureQuery showurl server path params
-  printKeyList json "users" res
+  res <- pagureQuery showurl server json path params
+  unless json $
+    printKeyList "users" res
 
-printKeyList :: Bool -> String -> Value -> IO ()
-printKeyList json key' res =
-  if json then print res
-    else mapM_ T.putStrLn $ res ^.. key (T.pack key') . values . _String
+printKeyList :: String -> Value -> IO ()
+printKeyList key' res =
+  mapM_ T.putStrLn $ res ^.. key (T.pack key') . values . _String
 
 -- from simple-cmd
 error' :: String -> a
