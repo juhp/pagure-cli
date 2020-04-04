@@ -47,6 +47,8 @@ main =
     repoBranches <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
     projectIssues <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date")
+  , Subcommand "users" "find users" $
+    users <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "PATTERN"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
@@ -137,6 +139,13 @@ repoBranches server json showurl repo = do
   let path = repo </> "git/branches"
   res <- pagureQuery showurl server path []
   printKeyList json "branches" res
+
+users :: String -> Bool -> Bool -> String -> IO ()
+users server json showurl pat = do
+  let path = "users"
+      params = maybeKey "pattern" $ Just pat
+  res <- pagureQuery showurl server path params
+  printKeyList json "users" res
 
 printKeyList :: Bool -> String -> Value -> IO ()
 printKeyList json key' res =
