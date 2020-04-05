@@ -14,7 +14,8 @@ import Control.Applicative (
 #endif
                            )
 import Control.Monad (unless, when)
-import Data.Aeson (eitherDecode, Value)
+import Data.Aeson (eitherDecode)
+import Data.Aeson.Types
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Maybe
@@ -22,6 +23,7 @@ import Data.Maybe
 #else
 import Data.Semigroup ((<>))
 #endif
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Lens.Micro
@@ -93,8 +95,8 @@ maybeKey _ Nothing = []
 maybeKey k mval = [(B.pack k, fmap B.pack mval)]
 
 printResult :: String -> String -> Value -> IO ()
-printResult object key' result =
-  mapM_ T.putStrLn $ result ^.. key (T.pack object) . values . key (T.pack key') . _String
+printResult obj key' result =
+  mapM_ T.putStrLn $ result ^.. key (T.pack obj) . values . key (T.pack key') . _String
 
 -- FIXME limit max number of issues
 projectIssues :: String -> Bool -> Bool -> Bool -> String -> Bool -> Maybe String -> Maybe String -> Maybe String -> IO ()
@@ -104,20 +106,30 @@ projectIssues server count json showurl repo allstatus mauthor msince mpat = do
                maybeKey "author" mauthor ++ maybeKey "since" msince
   results <- queryPaged server count showurl json path params ("pagination", "page")
   unless json $
-    mapM_ (printIssues "issues") results
+    mapM_ printIssues results
   where
-    printIssues :: String -> Value -> IO ()
-    printIssues object result = do
-      let ids = result ^.. key (T.pack object) . values . key (T.pack "id") . _Integer
-          titles = result ^.. key (T.pack object) . values . key (T.pack "title") . _String
-          statuses = result ^.. key (T.pack object) . values . key (T.pack "status") . _String
-      mapM_ printIssue $ zip3 ids titles statuses
+    printIssues :: Value -> IO ()
+    printIssues result = do
+      let issues = result ^.. key (T.pack "issues") . values . _Object
+      mapM_ printIssue issues
 
-    printIssue :: (Integer, T.Text, T.Text) -> IO ()
-    printIssue (issue, title, status) =
-      when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $ do
-        T.putStrLn $ "\"" <> title <> "\""
-        putStrLn $ "https://" <> server </> repo </> "issue" </> show issue <> " (" <> T.unpack status <> ")"
+    parseIssue :: Object -> Maybe (Integer, Text, Text)
+    parseIssue =
+      parseMaybe $ \obj -> do
+        id' <- obj .: "id"
+        title <- obj .: "title"
+        status <- obj .: "status"
+        return (id',title,status)
+
+    printIssue :: Object -> IO ()
+    printIssue issue = do
+      let mfields = parseIssue issue
+      case mfields of
+        Nothing -> putStrLn "parsing issue failed"
+        Just (id',title,status) ->
+          when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $ do
+            T.putStrLn $ "\"" <> title <> "\""
+            putStrLn $ "https://" <> server </> repo </> "issue" </> show id' <> " (" <> T.unpack status <> ")"
 
 -- FIXME limit max number of pages (10?) or --pages
 queryPaged :: String -> Bool -> Bool -> Bool -> String -> Query -> (String,String) -> IO [Value]
