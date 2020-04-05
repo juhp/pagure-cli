@@ -16,6 +16,10 @@ import Control.Applicative (
 import Control.Monad (unless, when)
 import Data.Aeson (eitherDecode)
 import Data.Aeson.Types
+#if (defined(MIN_VERSION_http_conduit) && MIN_VERSION_http_conduit(2,3,1))
+#else
+import Data.ByteString (ByteString)
+#endif
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Maybe
@@ -65,6 +69,11 @@ main =
 
 srcFedoraprojectOrg :: String
 srcFedoraprojectOrg = "src.fedoraproject.org"
+
+#if (defined(MIN_VERSION_http_conduit) && MIN_VERSION_http_conduit(2,3,1))
+#else
+type Query = [(ByteString, Maybe ByteString)]
+#endif
 
 -- FIXME show namespace?
 listProjects :: String -> Bool -> Bool -> Bool -> Maybe String -> Filter -> IO ()
