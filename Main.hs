@@ -127,9 +127,8 @@ projectIssues server count json showurl repo allstatus mauthor msince mpat = do
       case mfields of
         Nothing -> putStrLn "parsing issue failed"
         Just (id',title,status) ->
-          when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $ do
-            T.putStrLn $ "\"" <> title <> "\""
-            putStrLn $ "https://" <> server </> repo </> "issue" </> show id' <> " (" <> T.unpack status <> ")"
+          when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $
+          putStrLn $ "https://" <> server </> repo </> "issue" </> show id' <> " (" <> T.unpack status <> "): " <> T.unpack title
 
 -- FIXME limit max number of pages (10?) or --pages
 queryPaged :: String -> Bool -> Bool -> Bool -> String -> Query -> (String,String) -> IO [Value]
