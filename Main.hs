@@ -46,7 +46,7 @@ main =
     userRepos <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "USER"
 --  , Subcommand "clone" "clone project" $
 --    cloneProject <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "USER"
-  , Subcommand "branches" "show project branches" $
+  , Subcommand "branches" "list project branches" $
     repoBranches <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
     projectIssues <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
