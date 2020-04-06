@@ -92,9 +92,9 @@ listProjects server count showurl json forks mnamespace mpackager mpattern = do
     error' "Please give a package pattern, --count, or --owner/--username"
   let path = "projects"
       params = makeKey "short" "1" ++ fork ++ packager ++ maybeKey "namespace" mnamespace ++ maybeKey "pattern" mpattern
-  results <- queryPaged server count showurl json path params ("pagination", "page")
+  pages <- queryPaged server count showurl json path params ("pagination", "page")
   unless json $
-    mapM_ (printResult "projects" (if isJust mnamespace then "name" else "fullname")) results
+    mapM_ printPage pages
   where
     -- (!orphan only works on pagure >=0.29)
     packager = case mpackager of
@@ -107,12 +107,37 @@ listProjects server count showurl json forks mnamespace mpackager mpattern = do
       IncludeForks -> []
       OnlyForks -> makeKey "fork" "1"
 
+    printPage :: Value -> IO ()
+    printPage result =
+      let key' = if isJust mnamespace then "name" else "fullname" in
+      mapM_ T.putStrLn $ result ^.. key "projects" . values . key (T.pack key') . _String
+
 userRepos :: String -> Bool -> Bool -> Bool -> String -> IO ()
 userRepos server count showurl json user = do
   let path = "user" </> user
-  results <- queryPaged server count showurl json path [] ("repos_pagination", "repopage")
+  pages <- queryPaged server count showurl json path [] ("repos_pagination", "repopage")
   unless json $
-    mapM_ (printResult "repos" "name") results
+    mapM_ printPage pages
+  where
+    printPage :: Value -> IO ()
+    printPage result = do
+      let repos = result ^.. key (T.pack "repos") . values . _Object
+      mapM_ printRepo repos
+
+    printRepo :: Object -> IO ()
+    printRepo repo = do
+      let mfields = parseRepo repo
+      case mfields of
+        Nothing -> error' "parsing repo failed"
+        Just (mnamespace,name) ->
+          T.putStrLn $ maybe "" (<> "/") mnamespace  <> name
+
+    parseRepo :: Object -> Maybe (Maybe Text, Text)
+    parseRepo =
+      parseMaybe $ \obj -> do
+        namespace <- obj .:? "namespace"
+        name <- obj .: "name"
+        return (namespace,name)
 
 maybeKey :: String -> Maybe String -> Query
 maybeKey _ Nothing = []
@@ -124,10 +149,6 @@ makeKey k val = [(B.pack k, Just (B.pack val))]
 boolKey :: String -> Bool -> String -> Query
 boolKey _ False _ = []
 boolKey k True val = makeKey k val
-
-printResult :: String -> String -> Value -> IO ()
-printResult obj key' result =
-  mapM_ T.putStrLn $ result ^.. key (T.pack obj) . values . key (T.pack key') . _String
 
 -- FIXME limit max number of issues
 projectIssues :: String -> Bool -> Bool -> Bool -> String -> Bool -> Maybe String -> Maybe String -> Maybe String -> IO ()
