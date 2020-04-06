@@ -165,14 +165,6 @@ projectIssues server count showurl json repo allstatus mauthor msince mpat = do
       let issues = result ^.. key (T.pack "issues") . values . _Object
       mapM_ printIssue issues
 
-    parseIssue :: Object -> Maybe (Integer, Text, Text)
-    parseIssue =
-      parseMaybe $ \obj -> do
-        id' <- obj .: "id"
-        title <- obj .: "title"
-        status <- obj .: "status"
-        return (id',title,status)
-
     printIssue :: Object -> IO ()
     printIssue issue = do
       let mfields = parseIssue issue
@@ -181,6 +173,14 @@ projectIssues server count showurl json repo allstatus mauthor msince mpat = do
         Just (id',title,status) ->
           when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $
           putStrLn $ "https://" <> server </> repo </> "issue" </> show id' <> " (" <> T.unpack status <> "): " <> T.unpack title
+
+    parseIssue :: Object -> Maybe (Integer, Text, Text)
+    parseIssue =
+      parseMaybe $ \obj -> do
+        id' <- obj .: "id"
+        title <- obj .: "title"
+        status <- obj .: "status"
+        return (id',title,status)
 
 -- FIXME limit max number of pages (10?) or --pages
 queryPaged :: String -> Bool -> Bool -> Bool -> String -> Query -> (String,String) -> IO [Value]
