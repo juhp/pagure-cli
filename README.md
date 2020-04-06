@@ -10,57 +10,72 @@
 A [pagure](https://docs.pagure.org/pagure/) client for querying
 projects and users.
 
-## Usage examples
+## Usage
 By default it uses the [src.fedoraproject.org](https://src.fedoraproject.org/)
-Pagure server instance (aka Fedora dist-git).
+Pagure server instance (aka Fedora dist-git), but this can be overriden
+by the `--server` option.
 
-- List or search for source packages (one can also filter by owner or committer):
+## List/search for repos
 
 ```
 $ pagure list emacs\*
 emacs
 :
 ```
-(Note by default 'orphan' owned packages are excluded.)
+Note by default 'orphan' owned packages are excluded.
 
-- Count packages of a user:
+One can also filter by owner or committer.
+
+## List user's projects
+
+Count projects of a user:
+```
+$ pagure user -s pagure.io --count mattdm
+93
+```
+
+## List groups:
 
 ```
-$ pagure user --count mattdm
-19
-```
-
-- List projects on pagure.io:
-
-```
-$ pagure list -s pagure.io \*
+$ pagure groups
 :
 ```
 
-- There are more commands:
+## More commands
+
+- `branches` lists the git branches of a repo
+
+- `issues` to query and list issues
+
+- `users` to list usernames of users
+
+- `username` shows the fullname of a user
+
+- `git-url` shows the git urls for a repo
+
+## Help
+
+Use `--help` to get help on individual commands:
 
 ```
-$ pagure --version
-0.2
-$ pagure --help
-Pagure client
-
-Usage: pagure [--version] COMMAND
-  Simple pagure CLI
+$ pagure list --help
+Usage: pagure list [-s|--server SERVER] [-c|--count] [-U|--url] [-j|--json]
+                   [(-F|--only-forks) | (-f|--include-forks)]
+                   [-n|--namespace NAMESPACE]
+                   [(-o|--owner OWNER) | (-u|--username USERNAME)] [PATTERN]
+  list projects
 
 Available options:
+  -s,--server SERVER       Pagure server
+  -c,--count               Show number only
+  -U,--url                 Print API url
+  -j,--json                Print raw json response
+  -F,--only-forks          Only list forks
+  -f,--include-forks       Include forks [default: ignore forks]
+  -n,--namespace NAMESPACE Specify project repo namespace
+  -o,--owner OWNER         Projects with certain owner
+  -u,--username USERNAME   Projects to which username can commit
   -h,--help                Show this help text
-  --version                Show version
-
-Available commands:
-  list                     list projects
-  user                     user repos
-  branches                 list project branches
-  issues                   list project issues
-  users                    list users
-  username                 fullname of user
-  groups                   list groups
-  git-url                  show project repo's git urls
 ```
 
 ## Installation
