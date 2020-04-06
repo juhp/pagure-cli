@@ -32,6 +32,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Lens.Micro
 import Lens.Micro.Aeson
+import Network.HTTP.Conduit (queryString)
 import Network.HTTP.Simple
 import SimpleCmdArgs
 import System.FilePath ((</>))
@@ -60,7 +61,7 @@ main =
   where
     countOpt = switchWith 'c' "count" "Show number only"
     jsonOpt = switchWith 'j' "json" "Print raw json response"
-    urlOpt = switchWith 'u' "url" "Show url"
+    urlOpt = switchWith 'U' "url" "Show url"
     namespaceOpt = strOptionWith 'n' "namespace" "NAMESPACE" "Specify project repo namespace"
     ownerOpt = strOptionWith 'o' "owner" "OWNER" "Projects with certain owner"
     serverOpt = strOptionalWith 's' "server" "SERVER" "Pagure server" srcFedoraprojectOrg
@@ -158,8 +159,8 @@ queryPaged server count showurl json path params (pagination,paging) = do
 pagureQuery :: Bool -> String -> Bool -> String -> Query -> IO Value
 pagureQuery showurl server json path params = do
   let url = "https://" <> server </> "api/0" </> path
-  when showurl $ putStrLn url
   req <- setRequestQueryString params <$> parseRequest url
+  when showurl $ putStrLn $ url ++ B.unpack (queryString req)
   if json then do
     res <- getResponseBody <$> httpLBS req
     BL.putStrLn res
