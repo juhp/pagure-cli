@@ -11,16 +11,17 @@ A [pagure](https://docs.pagure.org/pagure/) client for querying
 projects and users.
 
 ## Usage examples
-It defaults to using the src.fedoraproject.org Pagure instance.
+It defaults to using the src.fedoraproject.org Pagure instance (Fedora dist-git).
 
-List or search for source packages (can also filter by owner):
+List or search for source packages (can also filter by owner or committer):
 ```
 $ pagure list emacs\*
 emacs
 :
 ```
+(Note by default 'orphan' owned packages are excluded.)
 
-List packages by user:
+List (in this case count) packages of a user:
 ```
 $ pagure user --count mattdm
 19
@@ -32,15 +33,48 @@ $ pagure list -s pagure.io \*
 :
 ```
 
+There are more commands:
+
+```
+$ pagure --version
+0.2
+$ pagure --help
+Pagure client
+
+Usage: pagure [--version] COMMAND
+  Simple pagure CLI
+
+Available options:
+  -h,--help                Show this help text
+  --version                Show version
+
+Available commands:
+  list                     list projects
+  user                     user repos
+  branches                 list project branches
+  issues                   list project issues
+  users                    list users
+  username                 fullname of user
+  groups                   list groups
+  git-url                  show project repo's git urls
+```
 ## Installation
 
-To build from source you will need cabal-install and ghc, or stack.
+To build the latest release you will need cabal-install and ghc, or stack:
 
-`cabal install pagure-cli` or `stack install pagure-cli`
+`stack install pagure-cli` or `cabal new-install pagure-cli`.
 
-(or directly in the git source without the package name).
+Or to build from the git source, run directly without the package name.
 
 ## Binaries
 
 If you are using Fedora you can install the package from my
 [copr repo](https://copr.fedorainfracloud.org/coprs/petersen/pagure-cli/).
+
+## Other info
+
+Pagure rest API can be found on pagure servers: eg <https://pagure.io/api/0>.
+There are still many unsupported commands.
+
+Ricky Elrod (relrod) made https://github.com/fedora-infra/pagure-cli in 2015 -
+this code-base is unrelated to it.
