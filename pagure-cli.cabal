@@ -21,6 +21,11 @@ source-repository head
   type:                git
   location:            https://github.com/juhp/pagure-cli.git
 
+
+flag microlens
+  description:       Use smaller microlens instead of lens
+  default:           False
+
 executable pagure
   main-is:             Main.hs
 
@@ -29,11 +34,15 @@ executable pagure
                      , bytestring
                      , filepath
                      , http-conduit
-                     , microlens
-                     , microlens-aeson
                      , optparse-applicative
                      , simple-cmd-args >= 0.1.6
                      , text
+  if flag(microlens)
+      build-depends:   microlens, microlens-aeson
+      cpp-options:   -DMICROLENS
+  else
+      build-depends:   lens, lens-aeson
+
   if impl(ghc<8.0)
       build-depends: semigroups
 

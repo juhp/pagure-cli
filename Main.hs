@@ -20,6 +20,13 @@ import Data.Aeson.Types
 #else
 import Data.ByteString (ByteString)
 #endif
+#if (defined(VERSION_lens_aeson))
+import Control.Lens
+import Data.Aeson.Lens
+#else
+import Lens.Micro
+import Lens.Micro.Aeson
+#endif
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Maybe
@@ -30,8 +37,6 @@ import Data.Semigroup ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Lens.Micro
-import Lens.Micro.Aeson
 import Network.HTTP.Conduit (queryString)
 import Network.HTTP.Simple
 import SimpleCmdArgs
