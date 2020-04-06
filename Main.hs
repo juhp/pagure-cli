@@ -47,25 +47,24 @@ main =
     listProjects <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> forksOpt <*> optional namespaceOpt <*> optional packagerOpt <*> optional (strArg "PATTERN")
   , Subcommand "user" "user repos" $
     userRepos <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> strArg "USER"
---  , Subcommand "clone" "clone project" $
---    cloneProject <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "USER"
   , Subcommand "branches" "list project branches" $
     repoBranches <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
     projectIssues <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
   , Subcommand "users" "list users" $
     users <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "PATTERN"
-  , Subcommand "username" "Fullname of user" $
+  , Subcommand "username" "fullname of user" $
     username <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "USERNAME"
   , Subcommand "groups" "list groups" $
     groups <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> optional (strArg "PATTERN")
-  , Subcommand "git-url" "Show project git urls" $
+  , Subcommand "git-url" "show project repo's git urls" $
     gitUrl <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
     jsonOpt = switchWith 'j' "json" "Print raw json response"
-    urlOpt = switchWith 'U' "url" "Show url"
+    -- FIXME should this be no-op?
+    urlOpt = switchWith 'U' "url" "Print API url"
     namespaceOpt = strOptionWith 'n' "namespace" "NAMESPACE" "Specify project repo namespace"
     packagerOpt = Owner <$> ownerOpt <|> Committer <$> usernameOpt
     usernameOpt = strOptionWith 'u' "username" "USERNAME" "Projects to which username can commit"
