@@ -46,15 +46,15 @@ main =
   [ Subcommand "list" "list projects" $
     listProjects <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> forksOpt <*> optional namespaceOpt <*> optional packagerOpt <*> optional (strArg "PATTERN")
   , Subcommand "user" "user repos" $
-    userRepos <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "USER"
+    userRepos <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> strArg "USER"
 --  , Subcommand "clone" "clone project" $
---    cloneProject <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "USER"
+--    cloneProject <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "USER"
   , Subcommand "branches" "list project branches" $
-    repoBranches <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO"
+    repoBranches <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
-    projectIssues <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
-  , Subcommand "users" "find users" $
-    users <$> serverOpt <*> jsonOpt <*> urlOpt <*> strArg "PATTERN"
+    projectIssues <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
+  , Subcommand "users" "list users" $
+    users <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "PATTERN"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
@@ -102,7 +102,7 @@ listProjects server count showurl json forks mnamespace mpackager mpattern = do
       OnlyForks -> maybeKey "fork" $ Just "1"
 
 userRepos :: String -> Bool -> Bool -> Bool -> String -> IO ()
-userRepos server count json showurl user = do
+userRepos server count showurl json user = do
   let path = "user" </> user
   results <- queryPaged server count showurl json path [] ("repos_pagination", "repopage")
   unless json $
@@ -118,7 +118,7 @@ printResult obj key' result =
 
 -- FIXME limit max number of issues
 projectIssues :: String -> Bool -> Bool -> Bool -> String -> Bool -> Maybe String -> Maybe String -> Maybe String -> IO ()
-projectIssues server count json showurl repo allstatus mauthor msince mpat = do
+projectIssues server count showurl json repo allstatus mauthor msince mpat = do
   let path = repo </> "issues"
       params = [("status", Just "all") | allstatus] ++
                maybeKey "author" mauthor ++ maybeKey "since" msince
@@ -178,7 +178,7 @@ pagureQuery showurl server json path params = do
     else getResponseBody <$> httpJSON req
 
 repoBranches :: String -> Bool -> Bool -> String -> IO ()
-repoBranches server json showurl repo = do
+repoBranches server showurl json repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
@@ -188,7 +188,7 @@ repoBranches server json showurl repo = do
     printKeyList "branches" res
 
 users :: String -> Bool -> Bool -> String -> IO ()
-users server json showurl pat = do
+users server showurl json pat = do
   let path = "users"
       params = maybeKey "pattern" $ Just pat
   res <- pagureQuery showurl server json path params
