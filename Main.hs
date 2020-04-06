@@ -55,6 +55,8 @@ main =
     projectIssues <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
   , Subcommand "users" "list users" $
     users <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "PATTERN"
+  , Subcommand "username" "Fullname of user" $
+    username <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "USERNAME"
   , Subcommand "groups" "list groups" $
     groups <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> optional (strArg "PATTERN")
   , Subcommand "git-url" "Show project git urls" $
@@ -205,6 +207,15 @@ users server showurl json pat = do
   res <- pagureQuery showurl server json path params
   unless json $
     printKeyList "users" res
+
+username :: String -> Bool -> Bool -> String -> IO ()
+username server showurl json user = do
+  let path = "user" </> user
+  res <- pagureQuery showurl server json path $ makeKey "per_page" "1"
+  unless json $
+    case res ^? key "user" . key "fullname" . _String of
+      Nothing -> error' "User fullname not found"
+      Just fn -> T.putStrLn fn
 
 groups :: String -> Bool -> Bool -> Bool -> Maybe String -> IO ()
 groups server count showurl json mpat = do
