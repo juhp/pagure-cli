@@ -55,6 +55,8 @@ main =
     projectIssues <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
   , Subcommand "users" "list users" $
     users <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "PATTERN"
+  , Subcommand "groups" "list groups" $
+    groups <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> optional (strArg "PATTERN")
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
@@ -194,6 +196,14 @@ users server showurl json pat = do
   res <- pagureQuery showurl server json path params
   unless json $
     printKeyList "users" res
+
+groups :: String -> Bool -> Bool -> Bool -> Maybe String -> IO ()
+groups server count showurl json mpat = do
+  let path = "groups"
+      params = maybeKey "pattern" mpat
+  results <- queryPaged server count showurl json path params ("pagination", "page")
+  unless json $
+    mapM_ (printKeyList "groups") results
 
 printKeyList :: String -> Value -> IO ()
 printKeyList key' res =
