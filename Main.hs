@@ -39,14 +39,12 @@ import System.FilePath ((</>))
 
 import Paths_pagure_cli (version)
 
-data Filter = Owner String (Maybe String) | All String
-
 main :: IO ()
 main =
   simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
   subcommands
   [ Subcommand "list" "list projects" $
-    listProjects <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> optional namespaceOpt <*> searchFilter
+    listProjects <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> forksOpt <*> optional namespaceOpt <*> optional packagerOpt <*> optional (strArg "PATTERN")
   , Subcommand "user" "user repos" $
     userRepos <$> serverOpt <*> countOpt <*> jsonOpt <*> urlOpt <*> strArg "USER"
 --  , Subcommand "clone" "clone project" $
@@ -63,10 +61,16 @@ main =
     jsonOpt = switchWith 'j' "json" "Print raw json response"
     urlOpt = switchWith 'U' "url" "Show url"
     namespaceOpt = strOptionWith 'n' "namespace" "NAMESPACE" "Specify project repo namespace"
+    packagerOpt = Owner <$> ownerOpt <|> Committer <$> usernameOpt
+    usernameOpt = strOptionWith 'u' "username" "USERNAME" "Projects to which username can commit"
     ownerOpt = strOptionWith 'o' "owner" "OWNER" "Projects with certain owner"
     serverOpt = strOptionalWith 's' "server" "SERVER" "Pagure server" srcFedoraprojectOrg
-    searchFilter = All <$> strArg "PATTERN" <|>
-                   Owner <$> ownerOpt <*> optional (strArg "PATTERN")
+    forksOpt = flagWith' OnlyForks 'F' "only-forks" "Only list forks" <|>
+               flagWith NoForks IncludeForks 'f' "include-forks" "Include forks [default: ignore forks]"
+
+data Packager = Owner String | Committer String
+
+data Forks = NoForks | IncludeForks | OnlyForks
 
 srcFedoraprojectOrg :: String
 srcFedoraprojectOrg = "src.fedoraproject.org"
@@ -76,22 +80,26 @@ srcFedoraprojectOrg = "src.fedoraproject.org"
 type Query = [(ByteString, Maybe ByteString)]
 #endif
 
--- FIXME show namespace?
-listProjects :: String -> Bool -> Bool -> Bool -> Maybe String -> Filter -> IO ()
-listProjects server count json showurl mnamespace search = do
+listProjects :: String -> Bool -> Bool -> Bool -> Forks -> Maybe String -> Maybe Packager -> Maybe String -> IO ()
+listProjects server count showurl json forks mnamespace mpackager mpattern = do
+  unless (count || isJust mpackager || isJust mpattern) $
+    error' "Please give a package pattern, --count, or --owner/--username"
   let path = "projects"
-      params = ("fork", Just "0") : owner search ++ maybeKey "namespace" mnamespace
+      params = ("short", Just "1") : fork ++ packager ++ maybeKey "namespace" mnamespace ++ maybeKey "pattern" mpattern
   results <- queryPaged server count showurl json path params ("pagination", "page")
   unless json $
-    mapM_ (printResult "projects" "name") results
+    mapM_ (printResult "projects" (if isJust mnamespace then "name" else "fullname")) results
   where
-    owner :: Filter -> Query
     -- (!orphan only works on pagure >=0.29)
-    owner (All s) =
-      [("owner", Just "!orphan") | server == srcFedoraprojectOrg] ++
-      [("pattern", Just (B.pack s))]
-    owner (Owner n mpat) =
-      ("owner", Just (B.pack n)) : maybeKey "pattern" mpat
+    packager = case mpackager of
+      Nothing -> [("owner", Just "!orphan") | server == srcFedoraprojectOrg]
+      Just (Owner o) -> maybeKey "owner" $ Just o
+      Just (Committer c) -> maybeKey "username" $ Just c
+
+    fork = case forks of
+      NoForks -> maybeKey "fork" $ Just "0"
+      IncludeForks -> []
+      OnlyForks -> maybeKey "fork" $ Just "1"
 
 userRepos :: String -> Bool -> Bool -> Bool -> String -> IO ()
 userRepos server count json showurl user = do
