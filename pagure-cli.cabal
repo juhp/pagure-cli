@@ -2,7 +2,7 @@ cabal-version:       2.0
 name:                pagure-cli
 version:             0.2
 synopsis:            Pagure client
-description:         A commandline Pagure client for querying projects and users.
+description:         A command-line Pagure client for querying projects and users.
 homepage:            https://github.com/juhp/pagure-cli
 bug-reports:         https://github.com/juhp/pagure-cli/issues
 license:             GPL-2
