@@ -11,9 +11,11 @@ A [pagure](https://docs.pagure.org/pagure/) client for querying
 projects and users.
 
 ## Usage examples
-It defaults to using the src.fedoraproject.org Pagure instance (Fedora dist-git).
+By default it uses the [src.fedoraproject.org](https://src.fedoraproject.org/)
+Pagure server instance (aka Fedora dist-git).
 
-List or search for source packages (can also filter by owner or committer):
+- List or search for source packages (one can also filter by owner or committer):
+
 ```
 $ pagure list emacs\*
 emacs
@@ -21,19 +23,21 @@ emacs
 ```
 (Note by default 'orphan' owned packages are excluded.)
 
-List (in this case count) packages of a user:
+- Count packages of a user:
+
 ```
 $ pagure user --count mattdm
 19
 ```
 
-List projects on pagure.io:
+- List projects on pagure.io:
+
 ```
 $ pagure list -s pagure.io \*
 :
 ```
 
-There are more commands:
+- There are more commands:
 
 ```
 $ pagure --version
@@ -58,6 +62,7 @@ Available commands:
   groups                   list groups
   git-url                  show project repo's git urls
 ```
+
 ## Installation
 
 To build the latest release you will need cabal-install and ghc, or stack:
@@ -71,10 +76,12 @@ Or to build from the git source, run directly without the package name.
 If you are using Fedora you can install the package from my
 [copr repo](https://copr.fedorainfracloud.org/coprs/petersen/pagure-cli/).
 
-## Other info
+## Contributions
 
 Pagure rest API can be found on pagure servers: eg <https://pagure.io/api/0>.
-There are still many unsupported commands.
+There are still many unsupported commands and options.
+Please open a ticket or PR to request adding more.
 
-Ricky Elrod (relrod) made https://github.com/fedora-infra/pagure-cli in 2015 -
-this code-base is unrelated to it.
+## Other clients
+After writing the initial version I discovered that
+Ricky Elrod (relrod) had made <https://github.com/fedora-infra/pagure-cli>.
