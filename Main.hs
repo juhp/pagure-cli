@@ -57,6 +57,8 @@ main =
     users <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "PATTERN"
   , Subcommand "groups" "list groups" $
     groups <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> optional (strArg "PATTERN")
+  , Subcommand "git-url" "Show project git urls" $
+    gitUrl <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
@@ -208,6 +210,20 @@ groups server count showurl json mpat = do
 printKeyList :: String -> Value -> IO ()
 printKeyList key' res =
   mapM_ T.putStrLn $ res ^.. key (T.pack key') . values . _String
+
+gitUrl :: String -> Bool -> Bool -> String -> IO ()
+gitUrl server showurl json repo = do
+  let namespace =
+        if server == srcFedoraprojectOrg && '/' `notElem` repo
+        then "rpms/" else ""
+      path = namespace ++ repo </> "git/urls"
+  res <- pagureQuery showurl server json path []
+  unless json $
+    printURLs res
+  where
+    printURLs :: Value -> IO ()
+    printURLs result =
+      mapM_ T.putStrLn $ result ^.. key (T.pack "urls") . members . _String
 
 -- from simple-cmd
 error' :: String -> a
