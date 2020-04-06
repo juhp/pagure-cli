@@ -89,21 +89,21 @@ listProjects server count showurl json forks mnamespace mpackager mpattern = do
   unless (count || isJust mpackager || isJust mpattern) $
     error' "Please give a package pattern, --count, or --owner/--username"
   let path = "projects"
-      params = ("short", Just "1") : fork ++ packager ++ maybeKey "namespace" mnamespace ++ maybeKey "pattern" mpattern
+      params = makeKey "short" "1" ++ fork ++ packager ++ maybeKey "namespace" mnamespace ++ maybeKey "pattern" mpattern
   results <- queryPaged server count showurl json path params ("pagination", "page")
   unless json $
     mapM_ (printResult "projects" (if isJust mnamespace then "name" else "fullname")) results
   where
     -- (!orphan only works on pagure >=0.29)
     packager = case mpackager of
-      Nothing -> [("owner", Just "!orphan") | server == srcFedoraprojectOrg]
-      Just (Owner o) -> maybeKey "owner" $ Just o
-      Just (Committer c) -> maybeKey "username" $ Just c
+      Nothing -> boolKey "owner" (server == srcFedoraprojectOrg) "!orphan"
+      Just (Owner o) -> makeKey "owner" o
+      Just (Committer c) -> makeKey "username" c
 
     fork = case forks of
-      NoForks -> maybeKey "fork" $ Just "0"
+      NoForks -> makeKey "fork" "0"
       IncludeForks -> []
-      OnlyForks -> maybeKey "fork" $ Just "1"
+      OnlyForks -> makeKey "fork" "1"
 
 userRepos :: String -> Bool -> Bool -> Bool -> String -> IO ()
 userRepos server count showurl json user = do
@@ -115,6 +115,13 @@ userRepos server count showurl json user = do
 maybeKey :: String -> Maybe String -> Query
 maybeKey _ Nothing = []
 maybeKey k mval = [(B.pack k, fmap B.pack mval)]
+
+makeKey :: String -> String -> Query
+makeKey k val = [(B.pack k, Just (B.pack val))]
+
+boolKey :: String -> Bool -> String -> Query
+boolKey _ False _ = []
+boolKey k True val = makeKey k val
 
 printResult :: String -> String -> Value -> IO ()
 printResult obj key' result =
@@ -155,7 +162,7 @@ projectIssues server count showurl json repo allstatus mauthor msince mpat = do
 -- FIXME limit max number of pages (10?) or --pages
 queryPaged :: String -> Bool -> Bool -> Bool -> String -> Query -> (String,String) -> IO [Value]
 queryPaged server count showurl json path params (pagination,paging) = do
-  res1 <- pagureQuery showurl server json path (params ++ [("per_page", Just (if count then "1" else "100"))])
+  res1 <- pagureQuery showurl server json path (params ++ makeKey "per_page" (if count then "1" else "100"))
   let mpages = res1 ^? key (T.pack pagination) . key "pages" . _Integer
   if count
     then do
@@ -166,7 +173,7 @@ queryPaged server count showurl json path params (pagination,paging) = do
     return $ res1 : rest
       where
         nextPage p =
-          pagureQuery False server json path (params ++ [("per_page", Just "100")] ++ maybeKey paging (Just (show p)))
+          pagureQuery False server json path (params ++ makeKey "per_page" "100" ++ makeKey paging (show p))
 
 pagureQuery :: Bool -> String -> Bool -> String -> Query -> IO Value
 pagureQuery showurl server json path params = do
@@ -194,7 +201,7 @@ repoBranches server showurl json repo = do
 users :: String -> Bool -> Bool -> String -> IO ()
 users server showurl json pat = do
   let path = "users"
-      params = maybeKey "pattern" $ Just pat
+      params = makeKey "pattern" pat
   res <- pagureQuery showurl server json path params
   unless json $
     printKeyList "users" res
