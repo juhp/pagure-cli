@@ -100,3 +100,5 @@ Please open a ticket or PR to request adding more.
 ## Other clients
 After writing the initial version I discovered that
 Ricky Elrod (relrod) had made <https://github.com/fedora-infra/pagure-cli>.
+
+I discovered a client in Rust https://pagure.io/ironthree/bodhi-cli by decathorpe.
