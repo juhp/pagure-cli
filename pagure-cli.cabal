@@ -1,4 +1,4 @@
-cabal-version:       2.0
+cabal-version:       1.18
 name:                pagure-cli
 version:             0.2
 synopsis:            Pagure client
@@ -35,8 +35,10 @@ executable pagure
                      , filepath
                      , http-conduit
                      , optparse-applicative
+                     , pagure
                      , simple-cmd-args >= 0.1.6
                      , text
+                     , yaml
   if flag(microlens)
       build-depends:   microlens, microlens-aeson
       cpp-options:   -DMICROLENS

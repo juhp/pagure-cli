@@ -37,10 +37,12 @@ import Data.Semigroup ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import Data.Yaml (encode)
 import Network.HTTP.Conduit (queryString)
 import Network.HTTP.Simple
 import SimpleCmdArgs
 import System.FilePath ((</>))
+import Web.Fedora.Pagure
 
 import Paths_pagure_cli (version)
 
@@ -48,7 +50,9 @@ main :: IO ()
 main =
   simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
   subcommands
-  [ Subcommand "list" "list projects" $
+  [ Subcommand "project" "show project details" $
+    projectInfo <$> serverOpt <*> strArg "PATTERN"
+  , Subcommand "list" "list projects" $
     listProjects <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> forksOpt <*> optional namespaceOpt <*> optional packagerOpt <*> optional (strArg "PATTERN")
   , Subcommand "user" "user repos" $
     userRepos <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> strArg "USER"
@@ -56,6 +60,8 @@ main =
     repoBranches <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
     projectIssues <$> serverOpt <*> countOpt <*> urlOpt <*> jsonOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
+  , Subcommand "issue" "show project issue" $
+    projectIssue <$> serverOpt <*> strArg "REPO" <*> argumentWith auto "ISSUE"
   , Subcommand "users" "list users" $
     users <$> serverOpt <*> urlOpt <*> jsonOpt <*> strArg "PATTERN"
   , Subcommand "username" "fullname of user" $
@@ -143,12 +149,12 @@ userRepos server count showurl json user = do
         name <- obj .: "name"
         return (namespace,name)
 
-maybeKey :: String -> Maybe String -> Query
-maybeKey _ Nothing = []
-maybeKey k mval = [(B.pack k, fmap B.pack mval)]
+-- maybeKey :: String -> Maybe String -> Query
+-- maybeKey _ Nothing = []
+-- maybeKey k mval = [(B.pack k, fmap B.pack mval)]
 
-makeKey :: String -> String -> Query
-makeKey k val = [(B.pack k, Just (B.pack val))]
+-- makeKey :: String -> String -> Query
+-- makeKey k val = [(B.pack k, Just (B.pack val))]
 
 boolKey :: String -> Bool -> String -> Query
 boolKey _ False _ = []
@@ -275,3 +281,13 @@ error' = errorWithoutStackTrace
 #else
 error' = error
 #endif
+
+projectInfo :: String -> String -> IO ()
+projectInfo server repo = do
+  eval <- pagureProjectInfo server repo
+  either error' (B.putStrLn . encode) eval
+
+projectIssue :: String -> String -> Int -> IO ()
+projectIssue server repo issue = do
+  eval <- pagureProjectIssueInfo server repo issue
+  either error' (B.putStrLn . encode) eval
