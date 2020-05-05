@@ -30,6 +30,7 @@ executable pagure
   main-is:             Main.hs
 
   build-depends:       aeson
+                     , aeson-pretty
                      , base < 5
                      , bytestring
                      , filepath
