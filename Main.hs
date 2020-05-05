@@ -195,25 +195,14 @@ projectIssues server count format repo allstatus mauthor msince mpat = do
 
 -- FIXME limit max number of pages (10?) or --pages
 queryPaged :: String -> Bool -> String -> Query -> (String,String) -> IO [Value]
-queryPaged server count path params (pagination,paging) = do
-  res1 <- pagureQuery server path (params ++ makeKey "per_page" (if count then "1" else "100"))
-  let mpages = res1 ^? key (T.pack pagination) . key "pages" . _Integer
+queryPaged server count path params (pagination,paging) =
   if count
     then do
-    print $ fromMaybe (error' "pages not found") mpages
+    mnum <- queryPagureCount server path params pagination
+    print $ fromMaybe (error' "pages not found") mnum
     return []
-    else do
-    rest <- mapM nextPage [2..(fromMaybe 0 mpages)]
-    return $ res1 : rest
-      where
-        nextPage p =
-          pagureQuery server path (params ++ makeKey "per_page" "100" ++ makeKey paging (show p))
-
-pagureQuery :: String -> String -> Query -> IO Value
-pagureQuery server path params = do
-  let url = "https://" <> server </> "api/0" </> path
-  req <- setRequestQueryString params <$> parseRequest url
-  getResponseBody <$> httpJSON req
+    else
+    queryPagurePaged server path params (pagination,paging)
 
 repoBranches :: String -> OutputFormat -> String -> IO ()
 repoBranches server format repo = do
@@ -221,20 +210,20 @@ repoBranches server format repo = do
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
       path = namespace ++ repo </> "git/branches"
-  res <- pagureQuery server path []
+  res <- queryPagure server path []
   defaultPrinter format (printKeyList "branches") res
 
 users :: String -> OutputFormat -> String -> IO ()
 users server format pat = do
   let path = "users"
       params = makeKey "pattern" pat
-  res <- pagureQuery server path params
+  res <- queryPagure server path params
   defaultPrinter format (printKeyList "users") res
 
 username :: String -> OutputFormat -> String -> IO ()
 username server format user = do
   let path = "user" </> user
-  res <- pagureQuery server path $ makeKey "per_page" "1"
+  res <- queryPagure server path $ makeKey "per_page" "1"
   defaultPrinter format printName res
   where
     printName res =
@@ -259,7 +248,7 @@ gitUrl server format repo = do
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
       path = namespace ++ repo </> "git/urls"
-  res <- pagureQuery server path []
+  res <- queryPagure server path []
   defaultPrinter format printURLs res
   where
     printURLs :: Value -> IO ()
