@@ -281,7 +281,11 @@ yamlPrinter FormatYaml = B.putStrLn . encode
 
 projectInfo :: String -> OutputFormat -> String -> IO ()
 projectInfo server format repo = do
-  eval <- pagureProjectInfo server repo
+  let namespace =
+        if server == srcFedoraprojectOrg && '/' `notElem` repo
+        then "rpms/" else ""
+      path = namespace ++ repo
+  eval <- pagureProjectInfo server path
   either error' (yamlPrinter format) eval
 
 projectIssue :: String -> OutputFormat -> String -> Int -> IO ()
