@@ -34,7 +34,6 @@ executable pagure
                      , base < 5
                      , bytestring
                      , filepath
-                     , http-conduit
                      , optparse-applicative
                      , pagure
                      , simple-cmd-args >= 0.1.6

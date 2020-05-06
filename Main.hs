@@ -16,10 +16,6 @@ import Control.Applicative (
 import Control.Monad (unless, when)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.Types
-#if (defined(MIN_VERSION_http_conduit) && MIN_VERSION_http_conduit(2,3,1))
-#else
-import Data.ByteString (ByteString)
-#endif
 #if (defined(VERSION_lens_aeson))
 import Control.Lens
 import Data.Aeson.Lens
@@ -38,7 +34,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Yaml (encode)
-import Network.HTTP.Simple
 import SimpleCmdArgs
 import System.FilePath ((</>))
 import Web.Fedora.Pagure
@@ -89,11 +84,6 @@ data Forks = NoForks | IncludeForks | OnlyForks
 
 srcFedoraprojectOrg :: String
 srcFedoraprojectOrg = "src.fedoraproject.org"
-
-#if (defined(MIN_VERSION_http_conduit) && MIN_VERSION_http_conduit(2,3,1))
-#else
-type Query = [(ByteString, Maybe ByteString)]
-#endif
 
 defaultPrinter :: OutputFormat -> (Value -> IO ()) -> Value -> IO ()
 defaultPrinter FormatDefault pr = pr
