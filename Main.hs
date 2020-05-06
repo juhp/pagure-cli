@@ -36,7 +36,7 @@ import qualified Data.Text.IO as T
 import Data.Yaml (encode)
 import SimpleCmdArgs
 import System.FilePath ((</>))
-import Web.Fedora.Pagure
+import Fedora.Pagure
 
 import Paths_pagure_cli (version)
 
@@ -49,7 +49,7 @@ main =
   , Subcommand "list" "list projects" $
     listProjects <$> serverOpt <*> countOpt <*> formatOpt <*> forksOpt <*> optional namespaceOpt <*> optional packagerOpt <*> optional (strArg "PATTERN")
   , Subcommand "user" "user repos" $
-    userRepos <$> serverOpt <*> countOpt <*> formatOpt <*> strArg "USER"
+    userRepos <$> serverOpt <*> countOpt <*> strArg "USER"
   , Subcommand "branches" "list project branches" $
     repoBranches <$> serverOpt <*> formatOpt <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
@@ -115,31 +115,15 @@ listProjects server count format forks mnamespace mpackager mpattern = do
       let key' = if isJust mnamespace then "name" else "fullname" in
       mapM_ T.putStrLn $ result ^.. key "projects" . values . key (T.pack key') . _String
 
-userRepos :: String -> Bool -> OutputFormat -> String -> IO ()
-userRepos server count format user = do
-  let path = "user" </> user
-  pages <- queryPaged server count path [] ("repos_pagination", "repopage")
-  mapM_ (defaultPrinter format printPage) pages
-  where
-    printPage :: Value -> IO ()
-    printPage result = do
-      let repos = result ^.. key (T.pack "repos") . values . _Object
-      mapM_ printRepo repos
-
-    printRepo :: Object -> IO ()
-    printRepo repo = do
-      let mfields = parseRepo repo
-      case mfields of
-        Nothing -> error' "parsing repo failed"
-        Just (mnamespace,name) ->
-          T.putStrLn $ maybe "" (<> "/") mnamespace  <> name
-
-    parseRepo :: Object -> Maybe (Maybe Text, Text)
-    parseRepo =
-      parseMaybe $ \obj -> do
-        namespace <- obj .:? "namespace"
-        name <- obj .: "name"
-        return (namespace,name)
+userRepos :: String -> Bool -> String -> IO ()
+userRepos server count user =
+  if count then do
+    let path = "user" </> user
+    mcnt <- queryPagureCount server path [] "repos_pagination"
+    print $ fromMaybe (error' "number of repos could not be determined") mcnt
+    else do
+    repos <- pagureUserRepos server user
+    mapM_ T.putStrLn repos
 
 -- maybeKey :: String -> Maybe String -> Query
 -- maybeKey _ Nothing = []

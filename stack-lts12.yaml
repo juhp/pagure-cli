@@ -2,4 +2,4 @@ resolver: lts-12.26
 extra-deps:
   - simple-cmd-args-0.1.6
   - git: https://github.com/juhp/pagure-hs.git
-    commit: 6e4a66be29bfb68f1e6b7c30e80fabeecfee8682
+    commit: 63c3f77935ae8100373a05c9467f6a776d7e454e
