@@ -44,9 +44,7 @@ main :: IO ()
 main =
   simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
   subcommands
-  [ Subcommand "project" "show project details" $
-    projectInfo <$> serverOpt <*> formatOpt <*> strArg "PATTERN"
-  , Subcommand "list" "list projects" $
+  [ Subcommand "list" "list projects" $
     listProjects <$> serverOpt <*> countOpt <*> formatOpt <*> forksOpt <*> optional namespaceOpt <*> optional packagerOpt <*> optional (strArg "PATTERN")
   , Subcommand "user" "user repos" $
     userRepos <$> serverOpt <*> countOpt <*> strArg "USER"
@@ -54,8 +52,6 @@ main =
     repoBranches <$> serverOpt <*> formatOpt <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
     projectIssues <$> serverOpt <*> countOpt <*> formatOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
-  , Subcommand "issue" "show project issue" $
-    projectIssue <$> serverOpt <*> formatOpt <*> strArg "REPO" <*> argumentWith auto "ISSUE"
   , Subcommand "users" "list users" $
     users <$> serverOpt <*> formatOpt <*> strArg "PATTERN"
   , Subcommand "username" "fullname of user" $
@@ -64,6 +60,10 @@ main =
     groups <$> serverOpt <*> countOpt <*> formatOpt <*> optional (strArg "PATTERN")
   , Subcommand "git-url" "show project repo's git urls" $
     gitUrl <$> serverOpt <*> formatOpt <*> strArg "REPO"
+  , Subcommand "project" "show project details" $
+    projectInfo <$> serverOpt <*> formatOpt <*> strArg "PATTERN"
+  , Subcommand "issue" "show project issue" $
+    projectIssue <$> serverOpt <*> formatOpt <*> strArg "REPO" <*> argumentWith auto "ISSUE"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
