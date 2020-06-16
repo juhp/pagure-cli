@@ -3,5 +3,4 @@ packages: .
 source-repository-package
     type: git
     location: https://github.com/juhp/pagure-hs.git
-    tag: 63c3f77935ae8100373a05c9467f6a776d7e454e
-
+    tag: e4ddd0872b45b3b00de3cdf07216cf08cc3f462e

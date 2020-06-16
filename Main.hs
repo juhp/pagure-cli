@@ -47,7 +47,7 @@ main =
   [ Subcommand "list" "list projects" $
     listProjects <$> serverOpt <*> countOpt <*> formatOpt <*> forksOpt <*> optional namespaceOpt <*> optional packagerOpt <*> optional (strArg "PATTERN")
   , Subcommand "user" "user repos" $
-    userRepos <$> serverOpt <*> countOpt <*> strArg "USER"
+    userRepos <$> serverOpt <*> countOpt <*> switchWith 'f' "forks" "List user's forks" <*> strArg "USER"
   , Subcommand "branches" "list project branches" $
     repoBranches <$> serverOpt <*> formatOpt <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
@@ -115,15 +115,24 @@ listProjects server count format forks mnamespace mpackager mpattern = do
       let key' = if isJust mnamespace then "name" else "fullname" in
       mapM_ T.putStrLn $ result ^.. key "projects" . values . key (T.pack key') . _String
 
-userRepos :: String -> Bool -> String -> IO ()
-userRepos server count user =
-  if count then do
-    let path = "user" </> user
-    mcnt <- queryPagureCount server path [] "repos_pagination"
-    print $ fromMaybe (error' "number of repos could not be determined") mcnt
+userRepos :: String -> Bool -> Bool -> String -> IO ()
+userRepos server count forks user =
+  if forks then do
+    if count then do
+      let path = "user" </> user
+      mcnt <- queryPagureCount server path [] "forks_pagination"
+      print $ fromMaybe (error' "number of forks could not be determined") mcnt
+      else do
+      repos <- pagureUserForks server user
+      mapM_ T.putStrLn repos
     else do
-    repos <- pagureUserRepos server user
-    mapM_ T.putStrLn repos
+    if count then do
+      let path = "user" </> user
+      mcnt <- queryPagureCount server path [] "repos_pagination"
+      print $ fromMaybe (error' "number of repos could not be determined") mcnt
+      else do
+      repos <- pagureUserRepos server user
+      mapM_ T.putStrLn repos
 
 -- maybeKey :: String -> Maybe String -> Query
 -- maybeKey _ Nothing = []
