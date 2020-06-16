@@ -61,9 +61,11 @@ main =
   , Subcommand "git-url" "show project repo's git urls" $
     gitUrl <$> serverOpt <*> formatOpt <*> strArg "REPO"
   , Subcommand "project" "show project details" $
-    projectInfo <$> serverOpt <*> formatOpt <*> strArg "PATTERN"
+    projectInfo <$> serverOpt <*> formatOpt <*> strArg "PROJECT"
   , Subcommand "issue" "show project issue" $
     projectIssue <$> serverOpt <*> formatOpt <*> strArg "REPO" <*> argumentWith auto "ISSUE"
+  , Subcommand "userinfo" "show user details" $
+    userInfo <$> serverOpt <*> formatOpt <*> strArg "USERNAME"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
@@ -264,3 +266,8 @@ projectIssue :: String -> OutputFormat -> String -> Int -> IO ()
 projectIssue server format repo issue = do
   eval <- pagureProjectIssueInfo server repo issue
   either error' (yamlPrinter format . Object) eval
+
+userInfo :: String -> OutputFormat -> String -> IO ()
+userInfo server format user = do
+  eval <- pagureUserInfo server user []
+  either error' (yamlPrinter format) eval
