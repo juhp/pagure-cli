@@ -4,7 +4,7 @@
 [![GPL-2 license](https://img.shields.io/badge/license-GPL--2-blue.svg)](LICENSE)
 [![Stackage Lts](http://stackage.org/package/pagure-cli/badge/lts)](http://stackage.org/lts/package/pagure-cli)
 [![Stackage Nightly](http://stackage.org/package/pagure-cli/badge/nightly)](http://stackage.org/nightly/package/pagure-cli)
-[![Build status](https://secure.travis-ci.org/juhp/pagure-cli.svg)](https://travis-ci.org/juhp/pagure-cli)
+[![Build Status](https://travis-ci.com/juhp/pagure-cli.svg?branch=master)](https://travis-ci.com/juhp/pagure-cli)
 [![Copr build](https://copr.fedorainfracloud.org/coprs/petersen/pagure-cli/package/pagure-cli/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/petersen/pagure-cli/)
 
 A [pagure](https://docs.pagure.org/pagure/) client for querying
