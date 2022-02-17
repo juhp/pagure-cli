@@ -2,5 +2,5 @@ resolver: lts-14.27
 
 extra-deps:
   - simple-cmd-args-0.1.6
-  - pagure-0.1.0
-  - http-query-0.1.0
+  - pagure-0.1.1
+  - http-query-0.1.2

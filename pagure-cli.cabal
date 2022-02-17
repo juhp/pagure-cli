@@ -30,7 +30,7 @@ executable pagure
                      , bytestring
                      , filepath
                      , optparse-applicative
-                     , pagure
+                     , pagure >= 0.1.1
                      , simple-cmd-args >= 0.1.6
                      , text
                      , unordered-containers
