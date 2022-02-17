@@ -4,7 +4,6 @@
 [![GPL-2 license](https://img.shields.io/badge/license-GPL--2-blue.svg)](LICENSE)
 [![Stackage Lts](http://stackage.org/package/pagure-cli/badge/lts)](http://stackage.org/lts/package/pagure-cli)
 [![Stackage Nightly](http://stackage.org/package/pagure-cli/badge/nightly)](http://stackage.org/nightly/package/pagure-cli)
-[![Copr build](https://copr.fedorainfracloud.org/coprs/petersen/pagure-cli/package/pagure-cli/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/petersen/pagure-cli/)
 
 A [pagure](https://docs.pagure.org/pagure/) client for querying
 projects and users.
@@ -58,7 +57,7 @@ Use `--help` to get help on individual commands:
 
 ```
 $ pagure list --help
-Usage: pagure list [-s|--server SERVER] [-c|--count] [-U|--url] [-j|--json]
+Usage: pagure list [-s|--server SERVER] [-c|--count] [(-j|--json) | (-y|--yaml)]
                    [(-F|--only-forks) | (-f|--include-forks)]
                    [-n|--namespace NAMESPACE]
                    [(-o|--owner OWNER) | (-u|--username USERNAME)] [PATTERN]
@@ -67,8 +66,8 @@ Usage: pagure list [-s|--server SERVER] [-c|--count] [-U|--url] [-j|--json]
 Available options:
   -s,--server SERVER       Pagure server
   -c,--count               Show number only
-  -U,--url                 Print API url
-  -j,--json                Print raw json response
+  -j,--json                Output JSON
+  -y,--yaml                YAML output
   -F,--only-forks          Only list forks
   -f,--include-forks       Include forks [default: ignore forks]
   -n,--namespace NAMESPACE Specify project repo namespace
@@ -87,8 +86,7 @@ Or to build from the git source, run directly without the package name.
 
 ## Binaries
 
-If you are using Fedora you can install the package from my
-[copr repo](https://copr.fedorainfracloud.org/coprs/petersen/pagure-cli/).
+pagure-cli is packaged in Fedora (since F34).
 
 ## Contributions
 
@@ -100,4 +98,4 @@ Please open a ticket or PR to request adding more.
 After writing the initial version I discovered that
 Ricky Elrod (relrod) had made <https://github.com/fedora-infra/pagure-cli>.
 
-I discovered a client in Rust https://pagure.io/ironthree/bodhi-cli by decathorpe.
+I discovered a client in Rust <https://pagure.io/ironthree/bodhi-cli> by decathorpe.

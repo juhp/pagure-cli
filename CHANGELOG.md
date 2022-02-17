@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 (2022-02-17)
+- new commands: 'project', 'issue', 'userinfo'
+- drop --url and use aeson-pretty
+- use new pagure library
+- 'user': new '--fork" option
+- support aeson-2.0 and drop lens dependency
+- 'branches' and 'username' now error if entity does not exist
+- errors for non-existent API paths (eg unknown repo or user)
+
 ## 0.2 (2020-04-06)
 - new commands: 'branches', 'issues', 'users', 'username', 'groups', 'git-url'
 - 'list': new options --namespace, --username, --include-forks, --only-forks
