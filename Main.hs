@@ -14,12 +14,10 @@ import Control.Applicative (
 import Control.Monad (unless, when)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.Types
-#if (defined(VERSION_lens_aeson))
-import Control.Lens
-import Data.Aeson.Lens
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.KeyMap as M
 #else
-import Lens.Micro
-import Lens.Micro.Aeson
+import qualified Data.HashMap.Lazy as M
 #endif
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
@@ -85,7 +83,7 @@ data Forks = NoForks | IncludeForks | OnlyForks
 srcFedoraprojectOrg :: String
 srcFedoraprojectOrg = "src.fedoraproject.org"
 
-defaultPrinter :: OutputFormat -> (Value -> IO ()) -> Value -> IO ()
+defaultPrinter :: OutputFormat -> (Object -> IO ()) -> Object -> IO ()
 defaultPrinter FormatDefault pr = pr
 defaultPrinter FormatJson _ = BL.putStrLn . encodePretty
 defaultPrinter FormatYaml _ = B.putStrLn . encode
@@ -110,10 +108,11 @@ listProjects server count format forks mnamespace mpackager mpattern = do
       IncludeForks -> []
       OnlyForks -> makeKey "fork" "1"
 
-    printPage :: Value -> IO ()
-    printPage result =
-      let key' = if isJust mnamespace then "name" else "fullname" in
-      mapM_ T.putStrLn $ result ^.. key "projects" . values . key (T.pack key') . _String
+    printPage :: Object -> IO ()
+    printPage result = do
+      let key' = if isJust mnamespace then "name" else "fullname"
+          projects = lookupKey' "projects" result
+      (mapM_ T.putStrLn . mapMaybe (lookupKey key')) projects
 
 userRepos :: String -> Bool -> Bool -> String -> IO ()
 userRepos server count forks user =
@@ -154,9 +153,9 @@ projectIssues server count format repo allstatus mauthor msince mpat = do
   pages <- queryPaged server count path params ("pagination", "page")
   mapM_ (defaultPrinter format printIssues) pages
   where
-    printIssues :: Value -> IO ()
+    printIssues :: Object -> IO ()
     printIssues result = do
-      let issues = result ^.. key (T.pack "issues") . values . _Object
+      let issues = lookupKey' "issues" result :: [Object]
       mapM_ printIssue issues
 
     printIssue :: Object -> IO ()
@@ -177,7 +176,8 @@ projectIssues server count format repo allstatus mauthor msince mpat = do
         return (id',title,status)
 
 -- FIXME limit max number of pages (10?) or --pages
-queryPaged :: String -> Bool -> String -> Query -> (String,String) -> IO [Value]
+queryPaged :: String -> Bool -> String -> Query -> (String,String)
+           -> IO [Object]
 queryPaged server count path params (pagination,paging) =
   if count
     then do
@@ -210,7 +210,7 @@ username server format user = do
   defaultPrinter format printName res
   where
     printName res =
-      case res ^? key "user" . key "fullname" . _String of
+      case lookupKey "user" res >>= lookupKey "fullname" of
         Nothing -> error' "User fullname not found"
         Just fn -> T.putStrLn fn
 
@@ -221,9 +221,9 @@ groups server count format mpat = do
   pages <- queryPaged server count path params ("pagination", "page")
   mapM_ (defaultPrinter format (printKeyList "groups")) pages
 
-printKeyList :: String -> Value -> IO ()
+printKeyList :: String -> Object -> IO ()
 printKeyList key' res =
-  mapM_ T.putStrLn $ res ^.. key (T.pack key') . values . _String
+  mapM_ T.putStrLn $ (lookupKey' (T.pack key') res :: [Text])
 
 gitUrl :: String -> OutputFormat -> String -> IO ()
 gitUrl server format repo = do
@@ -234,9 +234,17 @@ gitUrl server format repo = do
   res <- queryPagure server path []
   defaultPrinter format printURLs res
   where
-    printURLs :: Value -> IO ()
     printURLs result =
-      mapM_ T.putStrLn $ result ^.. key (T.pack "urls") . members . _String
+      mapM_ T.putStrLn $
+      M.elems $ localLookupKey "urls" result
+
+    localLookupKey :: String -> Object ->
+#if MIN_VERSION_aeson(2,0,0)
+                      M.KeyMap Text
+#else
+                      M.HashMap Text Text
+#endif
+    localLookupKey = lookupKey' . T.pack
 
 -- from simple-cmd
 error' :: String -> a
@@ -246,7 +254,7 @@ error' = errorWithoutStackTrace
 error' = error
 #endif
 
-yamlPrinter :: OutputFormat -> Value -> IO ()
+yamlPrinter :: OutputFormat -> Object -> IO ()
 yamlPrinter FormatDefault = yamlPrinter FormatYaml
 yamlPrinter FormatJson = BL.putStrLn . encodePretty
 yamlPrinter FormatYaml = B.putStrLn . encode
@@ -263,7 +271,7 @@ projectInfo server format repo = do
 projectIssue :: String -> OutputFormat -> String -> Int -> IO ()
 projectIssue server format repo issue = do
   eval <- pagureProjectIssueInfo server repo issue
-  either error' (yamlPrinter format . Object) eval
+  either error' (yamlPrinter format) eval
 
 userInfo :: String -> OutputFormat -> String -> IO ()
 userInfo server format user = do
