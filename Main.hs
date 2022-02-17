@@ -193,8 +193,8 @@ repoBranches server format repo = do
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
       path = namespace ++ repo </> "git/branches"
-  res <- queryPagure server path []
-  defaultPrinter format (printKeyList "branches") res
+  eres <- queryPagureSingle server path []
+  either error' (defaultPrinter format (printKeyList "branches")) eres
 
 users :: String -> OutputFormat -> String -> IO ()
 users server format pat = do
@@ -206,7 +206,7 @@ users server format pat = do
 username :: String -> OutputFormat -> String -> IO ()
 username server format user = do
   let path = "user" </> user
-  res <- queryPagure server path $ makeKey "per_page" "1"
+  res <- queryPagure' server path $ makeKey "per_page" "1"
   defaultPrinter format printName res
   where
     printName res =
