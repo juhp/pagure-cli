@@ -116,22 +116,17 @@ listProjects server count format forks mnamespace mpackager mpattern = do
 
 userRepos :: String -> Bool -> Bool -> String -> IO ()
 userRepos server count forks user =
-  if forks then do
-    if count then do
-      let path = "user" </> user
-      mcnt <- queryPagureCount server path [] "forks_pagination"
-      print $ fromMaybe (error' "number of forks could not be determined") mcnt
-      else do
-      repos <- pagureUserForks server user
-      mapM_ T.putStrLn repos
+  if count then do
+    let path = "user" </> user
+    mcnt <- queryPagureCount server path [] $
+            if forks then "forks_pagination" else "repos_pagination"
+    print $
+      fromMaybe
+      (error' ("number of " ++ (if forks then "forks" else "repos") ++ " could not be determined"))
+      mcnt
     else do
-    if count then do
-      let path = "user" </> user
-      mcnt <- queryPagureCount server path [] "repos_pagination"
-      print $ fromMaybe (error' "number of repos could not be determined") mcnt
-      else do
-      repos <- pagureUserRepos server user
-      mapM_ T.putStrLn repos
+    repos <- (if forks then pagureUserForks else pagureUserRepos) server user
+    mapM_ T.putStrLn repos
 
 -- maybeKey :: String -> Maybe String -> Query
 -- maybeKey _ Nothing = []
@@ -223,7 +218,7 @@ groups server count format mpat = do
 
 printKeyList :: String -> Object -> IO ()
 printKeyList key' res =
-  mapM_ T.putStrLn $ (lookupKey' (T.pack key') res :: [Text])
+  mapM_ T.putStrLn (lookupKey' (T.pack key') res :: [Text])
 
 gitUrl :: String -> OutputFormat -> String -> IO ()
 gitUrl server format repo = do
