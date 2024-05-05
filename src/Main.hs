@@ -41,27 +41,72 @@ main =
   simpleCmdArgs (Just version) "Pagure client" "Simple pagure CLI" $
   subcommands
   [ Subcommand "list" "list projects" $
-    listProjects <$> serverOpt <*> countOpt <*> formatOpt <*> forksOpt <*> optional namespaceOpt <*> optional packagerOpt <*> optional (strArg "PATTERN")
+    listProjects
+    <$> serverOpt
+    <*> countOpt
+    <*> formatOpt
+    <*> forksOpt
+    <*> optional namespaceOpt
+    <*> optional packagerOpt
+    <*> optional (strArg "PATTERN")
   , Subcommand "user" "user repos" $
-    userRepos <$> serverOpt <*> countOpt <*> switchWith 'f' "forks" "List user's forks" <*> strArg "USER"
+    userRepos
+    <$> serverOpt
+    <*> countOpt
+    <*> switchWith 'f' "forks" "List user's forks"
+    <*> strArg "USER"
   , Subcommand "branches" "list project branches" $
-    repoBranches <$> serverOpt <*> formatOpt <*> strArg "REPO"
+    repoBranches
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
-    projectIssues <$> serverOpt <*> countOpt <*> formatOpt <*> strArg "REPO" <*> switchWith 'A' "all" "list Open and Closed issues" <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator") <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date") <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
+    projectIssues
+    <$> serverOpt
+    <*> countOpt
+    <*> formatOpt
+    <*> strArg "REPO"
+    <*> switchWith 'A' "all" "list Open and Closed issues"
+    <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator")
+    <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date")
+    <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
   , Subcommand "users" "list users" $
-    users <$> serverOpt <*> formatOpt <*> strArg "PATTERN"
+    users
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "PATTERN"
   , Subcommand "username" "fullname of user" $
-    username <$> serverOpt <*> formatOpt <*> strArg "USERNAME"
+    username
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "USERNAME"
   , Subcommand "groups" "list groups" $
-    groups <$> serverOpt <*> countOpt <*> formatOpt <*> optional (strArg "PATTERN")
+    groups
+    <$> serverOpt
+    <*> countOpt
+    <*> formatOpt
+    <*> optional (strArg "PATTERN")
   , Subcommand "git-url" "show project repo's git urls" $
-    gitUrl <$> serverOpt <*> formatOpt <*> strArg "REPO"
+    gitUrl
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "REPO"
   , Subcommand "project" "show project details" $
-    projectInfo <$> serverOpt <*> formatOpt <*> strArg "PROJECT"
+    projectInfo
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "PROJECT"
   , Subcommand "issue" "show project issue" $
-    projectIssue <$> serverOpt <*> formatOpt <*> strArg "REPO" <*> argumentWith auto "ISSUE"
+    projectIssue
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "REPO"
+    <*> argumentWith auto "ISSUE"
   , Subcommand "userinfo" "show user details" $
-    userInfo <$> serverOpt <*> formatOpt <*> strArg "USERNAME"
+    userInfo
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "USERNAME"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
