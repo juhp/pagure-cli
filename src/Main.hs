@@ -30,8 +30,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Yaml (encode)
+import Network.HTTP.Query ((+/+))
 import SimpleCmdArgs
-import System.FilePath ((</>))
 import Fedora.Pagure
 
 import Paths_pagure_cli (version)
@@ -162,7 +162,7 @@ listProjects server count format forks mnamespace mpackager mpattern = do
 userRepos :: String -> Bool -> Bool -> String -> IO ()
 userRepos server count forks user =
   if count then do
-    let path = "user" </> user
+    let path = "user" +/+ user
     mcnt <- queryPagureCount server path [] $
             if forks then "forks_pagination" else "repos_pagination"
     print $
@@ -187,8 +187,8 @@ boolKey k True val = makeKey k val
 -- FIXME limit max number of issues
 projectIssues :: String -> Bool -> OutputFormat -> String -> Bool -> Maybe String -> Maybe String -> Maybe String -> IO ()
 projectIssues server count format repo allstatus mauthor msince mpat = do
-  let path = repo </> "issues"
-      params = [("status", Just "all") | allstatus] ++
+  let path = repo +/+ "issues"
+      params = [makeItem "status" "all" | allstatus] ++
                maybeKey "author" mauthor ++ maybeKey "since" msince
   pages <- queryPaged server count path params ("pagination", "page")
   mapM_ (defaultPrinter format printIssues) pages
@@ -205,7 +205,7 @@ projectIssues server count format repo allstatus mauthor msince mpat = do
         Nothing -> putStrLn "parsing issue failed"
         Just (id',title,status) ->
           when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $
-          putStrLn $ "https://" <> server </> repo </> "issue" </> show id' <> " (" <> T.unpack status <> "): " <> T.unpack title
+          putStrLn $ "https://" <> server +/+ repo +/+ "issue" +/+ show id' <> " (" <> T.unpack status <> "): " <> T.unpack title
 
     parseIssue :: Object -> Maybe (Integer, Text, Text)
     parseIssue =
@@ -232,7 +232,7 @@ repoBranches server format repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
-      path = namespace ++ repo </> "git/branches"
+      path = namespace ++ repo +/+ "git/branches"
   eres <- queryPagureSingle server path []
   either error' (defaultPrinter format (printKeyList "branches")) eres
 
@@ -245,7 +245,7 @@ users server format pat = do
 
 username :: String -> OutputFormat -> String -> IO ()
 username server format user = do
-  let path = "user" </> user
+  let path = "user" +/+ user
   res <- queryPagure' server path $ makeKey "per_page" "1"
   defaultPrinter format printName res
   where
@@ -270,7 +270,7 @@ gitUrl server format repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
-      path = namespace ++ repo </> "git/urls"
+      path = namespace ++ repo +/+ "git/urls"
   res <- queryPagure server path []
   defaultPrinter format printURLs res
   where

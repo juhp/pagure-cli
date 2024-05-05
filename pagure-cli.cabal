@@ -29,6 +29,7 @@ executable pagure
                      , base < 5
                      , bytestring
                      , filepath
+                     , http-query
                      , optparse-applicative
                      , pagure >= 0.1.1
                      , simple-cmd-args >= 0.1.6
