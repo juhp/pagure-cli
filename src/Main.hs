@@ -107,6 +107,12 @@ main =
     <$> serverOpt
     <*> formatOpt
     <*> strArg "USERNAME"
+  , Subcommand "groupinfo" "show group details" $
+    groupInfo
+    <$> serverOpt
+    <*> switchWith 'p' "projects" "List projects"
+    <*> formatOpt
+    <*> strArg "GROUP"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
@@ -316,4 +322,10 @@ projectIssue server format repo issue = do
 userInfo :: String -> OutputFormat -> String -> IO ()
 userInfo server format user = do
   eval <- pagureUserInfo server user []
+  either error' (yamlPrinter format) eval
+
+groupInfo :: String -> Bool -> OutputFormat -> String -> IO ()
+groupInfo server projects format group = do
+  let params = [makeItem "projects" "1" | projects]
+  eval <- pagureGroupInfo server group params
   either error' (yamlPrinter format) eval

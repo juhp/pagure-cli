@@ -31,7 +31,7 @@ executable pagure
                      , filepath
                      , http-query
                      , optparse-applicative
-                     , pagure >= 0.1.1
+                     , pagure >= 0.1.2
                      , simple-cmd-args >= 0.1.6
                      , text
                      , unordered-containers
