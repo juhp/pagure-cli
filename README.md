@@ -5,55 +5,60 @@
 [![Stackage Lts](http://stackage.org/package/pagure-cli/badge/lts)](http://stackage.org/lts/package/pagure-cli)
 [![Stackage Nightly](http://stackage.org/package/pagure-cli/badge/nightly)](http://stackage.org/nightly/package/pagure-cli)
 
-A [pagure](https://docs.pagure.org/pagure/) client for querying
-projects and users.
+A [pagure](https://docs.pagure.org/pagure/) gitforge client for querying
+and listing projects (repos), users, groups, and issues.
 
 ## Usage
 By default it uses the [src.fedoraproject.org](https://src.fedoraproject.org/)
 Pagure server instance (aka Fedora dist-git), but this can be overriden
 by the `--server` option.
 
-## List/search for repos
+### List/search for repos
+
+`$ pagure list rac\*`
 
 ```
-$ pagure list emacs\*
-emacs
-:
+rpms/raceintospace
+rpms/racket
 ```
+
 Note by default 'orphan' owned packages are excluded.
 
 One can also filter by owner or committer.
 
-## List user's projects
+### List user's projects
 
 Count projects of a user:
+
+`$ pagure user --server pagure.io --count mattdm`
+
 ```
-$ pagure user -s pagure.io --count mattdm
-93
+120
 ```
 
-## List groups:
+### List groups:
 
 ```
 $ pagure groups
 :
 ```
 
-## More commands
+### List group packages
+`$ pagure group budgie-sig`
 
-- `branches` lists the git branches of a repo
+```
+rpms/libxfce4windowing
+rpms/sassc
+rpms/wlrctl
+```
 
-- `issues` to query and list issues
+`$ pagure group -c rust-sig`
 
-- `users` to list usernames of users
-
-- `username` shows the fullname of a user
-
-- `git-url` shows the git urls for a repo
+```
+3089
+```
 
 ## Help
-
-Use `--help` to get help on individual commands:
 
 `$ pagure --version`
 
@@ -89,24 +94,24 @@ Available commands:
   groups                   list groups
   groupinfo                show group details
 ```
+Use `--help` to get help on individual commands:
+
 
 ## Installation
+pagure-cli is packaged in Fedora and EPEL 9: <https://src.fedoraproject.org/rpms/pagure-cli>
 
+## Build from source
 To build the latest release you will need cabal-install and ghc, or stack:
 
 `stack install pagure-cli` or `cabal install pagure-cli`.
 
 Or to build from the git source, run the commands without the package name.
 
-## Binaries
-
-pagure-cli is packaged in Fedora and EPEL 9: <https://src.fedoraproject.org/rpms/pagure-cli>
-
 ## Contributions
-
 Pagure rest API can be found on pagure servers: eg <https://pagure.io/api/0>.
 There are still many unsupported commands and options.
-Please open a ticket or PR to request adding more.
+Please open a ticket or PR to request adding more at
+<https://github.com/juhp/pagure-cli>.
 
 Also part of this client uses the simple
 [pagure-hs](https://hackage.haskell.org/package/pagure) bindings.
@@ -115,4 +120,5 @@ Also part of this client uses the simple
 After writing the initial version I discovered that
 Ricky Elrod (relrod) had made <https://github.com/fedora-infra/pagure-cli>.
 
-I discovered a client in Rust <https://pagure.io/ironthree/pagure-rs> by decathorpe.
+There is a library client in Rust <https://pagure.io/ironthree/pagure-rs>
+by decathorpe.
