@@ -310,19 +310,6 @@ groupInfo server projects format group = do
 
 -- FIXME support acl parameter (admin, commit or ticket)
 groupProjects :: String -> Bool -> String -> IO ()
-groupProjects server count group = do
-  let path = "group" +/+ group
-      params = makeKey "projects" "1"
-  pages <- queryPagureCountPaged server count path params ("pagination", "page")
-  mapM_ (defaultPrinter FormatDefault printPage) pages
-  where
-    -- acl
-    -- packager = case mpackager of
-    --   Nothing -> boolKey "owner" (server == srcFedoraprojectOrg) "!orphan"
-    --   Just (Owner o) -> makeKey "owner" o
-    --   Just (Committer c) -> makeKey "username" c
-
-    printPage :: Object -> IO ()
-    printPage result = do
-     let projects = lookupKey' "projects" result
-     (mapM_ T.putStrLn . mapMaybe (lookupKey "fullname")) projects
+groupProjects server count group =
+  pagureGroupRepos server count group >>=
+  mapM_ T.putStrLn
