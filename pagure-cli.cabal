@@ -34,6 +34,7 @@ executable pagure
                      , http-query
                      , optparse-applicative
                      , pagure >= 0.1.2
+                     , simple-cmd
                      , simple-cmd-args >= 0.1.6
                      , text
                      , unordered-containers

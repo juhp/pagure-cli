@@ -31,6 +31,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Yaml (encode)
 import Network.HTTP.Query ((+/+))
+import SimpleCmd (error')
 import SimpleCmdArgs
 import Fedora.Pagure
 
@@ -297,14 +298,6 @@ gitUrl server format repo = do
                       M.HashMap Text Text
 #endif
     localLookupKey = lookupKey' . T.pack
-
--- from simple-cmd
-error' :: String -> a
-#if (defined(MIN_VERSION_base) && MIN_VERSION_base(4,9,0))
-error' = errorWithoutStackTrace
-#else
-error' = error
-#endif
 
 yamlPrinter :: OutputFormat -> Object -> IO ()
 yamlPrinter FormatDefault = yamlPrinter FormatYaml
