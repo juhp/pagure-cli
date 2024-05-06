@@ -22,16 +22,12 @@ import qualified Data.HashMap.Lazy as M
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Maybe
-#if (defined(MIN_VERSION_base) && MIN_VERSION_base(4,11,0))
-#else
-import Data.Semigroup ((<>))
-#endif
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Yaml (encode)
 import Network.HTTP.Query ((+/+))
-import SimpleCmd (error')
+import SimpleCmd (error', (+-+))
 import SimpleCmdArgs
 import Fedora.Pagure
 
@@ -180,7 +176,7 @@ userRepos server count forks user =
             if forks then "forks_pagination" else "repos_pagination"
     print $
       fromMaybe
-      (error' ("number of " ++ (if forks then "forks" else "repos") ++ " could not be determined"))
+      (error' ("number of" +-+ (if forks then "forks" else "repos") +-+ "could not be determined"))
       mcnt
     else do
     repos <- (if forks then pagureUserForks else pagureUserRepos) server user
@@ -218,7 +214,7 @@ projectIssues server count format repo allstatus mauthor msince mpat = do
         Nothing -> putStrLn "parsing issue failed"
         Just (id',title,status) ->
           when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $
-          putStrLn $ "https://" <> server +/+ repo +/+ "issue" +/+ show id' <> " (" <> T.unpack status <> "): " <> T.unpack title
+          putStrLn $ "https://" ++ server +/+ repo +/+ "issue" +/+ show id' +-+ "(" ++ T.unpack status ++ "):" +-+ T.unpack title
 
     parseIssue :: Object -> Maybe (Integer, Text, Text)
     parseIssue =
