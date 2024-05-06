@@ -55,12 +55,21 @@ $ pagure groups
 
 Use `--help` to get help on individual commands:
 
+`$ pagure --version`
+
 ```
-$ pagure list --help
+0.2.2
+```
+
+
+`$ pagure list --help`
+
+```
 Usage: pagure list [-s|--server SERVER] [-c|--count] [(-j|--json) | (-y|--yaml)]
                    [(-F|--only-forks) | (-f|--include-forks)]
                    [-n|--namespace NAMESPACE]
                    [(-o|--owner OWNER) | (-u|--username USERNAME)] [PATTERN]
+
   list projects
 
 Available options:
@@ -80,13 +89,13 @@ Available options:
 
 To build the latest release you will need cabal-install and ghc, or stack:
 
-`stack install pagure-cli` or `cabal new-install pagure-cli`.
+`stack install pagure-cli` or `cabal install pagure-cli`.
 
-Or to build from the git source, run directly without the package name.
+Or to build from the git source, run the commands without the package name.
 
 ## Binaries
 
-pagure-cli is packaged in Fedora (since F34).
+pagure-cli is packaged in Fedora and EPEL 9: <https://src.fedoraproject.org/rpms/pagure-cli>
 
 ## Contributions
 
@@ -94,8 +103,11 @@ Pagure rest API can be found on pagure servers: eg <https://pagure.io/api/0>.
 There are still many unsupported commands and options.
 Please open a ticket or PR to request adding more.
 
-## Other clients
+Also part of this client uses the simple
+[pagure-hs](https://hackage.haskell.org/package/pagure) bindings.
+
+## Other pagure clients
 After writing the initial version I discovered that
 Ricky Elrod (relrod) had made <https://github.com/fedora-infra/pagure-cli>.
 
-I discovered a client in Rust <https://pagure.io/ironthree/bodhi-cli> by decathorpe.
+I discovered a client in Rust <https://pagure.io/ironthree/pagure-rs> by decathorpe.

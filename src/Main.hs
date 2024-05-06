@@ -170,6 +170,7 @@ listProjects server count format forks mnamespace mpackager mpattern = do
           projects = lookupKey' "projects" result
       (mapM_ T.putStrLn . mapMaybe (lookupKey key')) projects
 
+-- FIXME duplicates subset of listProjects
 userRepos :: String -> Bool -> Bool -> String -> IO ()
 userRepos server count forks user =
   if count then do

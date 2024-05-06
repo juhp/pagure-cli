@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.2 (2024-05-06)
+- new add groupinfo and grouplist commands
+
 ## 0.2.1 (2022-02-17)
 - new commands: 'project', 'issue', 'userinfo'
 - drop --url and use aeson-pretty
