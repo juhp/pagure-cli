@@ -2,6 +2,8 @@
 
 ## 0.2.2 (2024-05-06)
 - new add group and groupinfo commands
+- help: order commands with better grouping
+- update to Haskell pagure-0.2.0
 
 ## 0.2.1 (2022-02-17)
 - new commands: 'project', 'issue', 'userinfo'
