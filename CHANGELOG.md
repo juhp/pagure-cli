@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.2.2 (2024-05-06)
-- new add groupinfo and grouplist commands
+- new add group and groupinfo commands
 
 ## 0.2.1 (2022-02-17)
 - new commands: 'project', 'issue', 'userinfo'

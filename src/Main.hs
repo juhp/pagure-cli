@@ -49,14 +49,29 @@ main =
     <*> optional namespaceOpt
     <*> optional packagerOpt
     <*> optional (strArg "PATTERN")
-  , Subcommand "user" "user repos" $
+  , Subcommand "user" "list user repos" $
     userRepos
     <$> serverOpt
     <*> countOpt
     <*> switchWith 'f' "forks" "List user's forks"
     <*> strArg "USER"
+  , Subcommand "group" "list group repos" $
+    groupProjects
+    <$> serverOpt
+    <*> switchWith 'c' "count" "Count projects"
+    <*> strArg "GROUP"
+  , Subcommand "project" "show project details" $
+    projectInfo
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "PROJECT"
   , Subcommand "branches" "list project branches" $
     repoBranches
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "REPO"
+  , Subcommand "git-url" "show project repo's git urls" $
+    gitUrl
     <$> serverOpt
     <*> formatOpt
     <*> strArg "REPO"
@@ -70,6 +85,12 @@ main =
     <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator")
     <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date")
     <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
+  , Subcommand "issue" "show project issue" $
+    projectIssue
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "REPO"
+    <*> argumentWith auto "ISSUE"
   , Subcommand "users" "list users" $
     users
     <$> serverOpt
@@ -80,43 +101,22 @@ main =
     <$> serverOpt
     <*> formatOpt
     <*> strArg "USERNAME"
+  , Subcommand "userinfo" "show user details" $
+    userInfo
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "USERNAME"
   , Subcommand "groups" "list groups" $
     groups
     <$> serverOpt
     <*> countOpt
     <*> formatOpt
     <*> optional (strArg "PATTERN")
-  , Subcommand "git-url" "show project repo's git urls" $
-    gitUrl
-    <$> serverOpt
-    <*> formatOpt
-    <*> strArg "REPO"
-  , Subcommand "project" "show project details" $
-    projectInfo
-    <$> serverOpt
-    <*> formatOpt
-    <*> strArg "PROJECT"
-  , Subcommand "issue" "show project issue" $
-    projectIssue
-    <$> serverOpt
-    <*> formatOpt
-    <*> strArg "REPO"
-    <*> argumentWith auto "ISSUE"
-  , Subcommand "userinfo" "show user details" $
-    userInfo
-    <$> serverOpt
-    <*> formatOpt
-    <*> strArg "USERNAME"
   , Subcommand "groupinfo" "show group details" $
     groupInfo
     <$> serverOpt
     <*> switchWith 'p' "projects" "List projects"
     <*> formatOpt
-    <*> strArg "GROUP"
-  , Subcommand "grouplist" "list group projects" $
-    groupProjects
-    <$> serverOpt
-    <*> switchWith 'c' "count" "Count projects"
     <*> strArg "GROUP"
   ]
   where

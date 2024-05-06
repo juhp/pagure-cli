@@ -61,28 +61,33 @@ Use `--help` to get help on individual commands:
 0.2.2
 ```
 
-
-`$ pagure list --help`
+`$ pagure --help`
 
 ```
-Usage: pagure list [-s|--server SERVER] [-c|--count] [(-j|--json) | (-y|--yaml)]
-                   [(-F|--only-forks) | (-f|--include-forks)]
-                   [-n|--namespace NAMESPACE]
-                   [(-o|--owner OWNER) | (-u|--username USERNAME)] [PATTERN]
+Pagure client
 
-  list projects
+Usage: pagure [--version] COMMAND
+
+  Simple pagure CLI
 
 Available options:
-  -s,--server SERVER       Pagure server
-  -c,--count               Show number only
-  -j,--json                Output JSON
-  -y,--yaml                YAML output
-  -F,--only-forks          Only list forks
-  -f,--include-forks       Include forks [default: ignore forks]
-  -n,--namespace NAMESPACE Specify project repo namespace
-  -o,--owner OWNER         Projects with certain owner
-  -u,--username USERNAME   Projects to which username can commit
   -h,--help                Show this help text
+  --version                Show version
+
+Available commands:
+  list                     list projects
+  user                     list user repos
+  group                    list group repos
+  project                  show project details
+  branches                 list project branches
+  git-url                  show project repo's git urls
+  issues                   list project issues
+  issue                    show project issue
+  users                    list users
+  username                 fullname of user
+  userinfo                 show user details
+  groups                   list groups
+  groupinfo                show group details
 ```
 
 ## Installation
