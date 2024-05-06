@@ -147,7 +147,7 @@ listProjects server count format forks mnamespace mpackager mpattern = do
     error' "Please give a package pattern, --count, or --owner/--username"
   let path = "projects"
       params = makeKey "short" "1" ++ fork ++ packager ++ maybeKey "namespace" mnamespace ++ maybeKey "pattern" mpattern
-  pages <- queryPaged server count path params ("pagination", "page")
+  pages <- queryPagureCountPaged server count path params ("pagination", "page")
   mapM_ (defaultPrinter format printPage) pages
   where
     -- (!orphan only works on pagure >=0.29)
@@ -192,7 +192,7 @@ projectIssues server count format repo allstatus mauthor msince mpat = do
   let path = repo +/+ "issues"
       params = [makeItem "status" "all" | allstatus] ++
                maybeKey "author" mauthor ++ maybeKey "since" msince
-  pages <- queryPaged server count path params ("pagination", "page")
+  pages <- queryPagureCountPaged server count path params ("pagination", "page")
   mapM_ (defaultPrinter format printIssues) pages
   where
     printIssues :: Object -> IO ()
@@ -217,18 +217,6 @@ projectIssues server count format repo allstatus mauthor msince mpat = do
         status <- obj .: "status"
         return (id',title,status)
 
--- FIXME limit max number of pages (10?) or --pages
-queryPaged :: String -> Bool -> String -> Query -> (String,String)
-           -> IO [Object]
-queryPaged server count path params (pagination,paging) =
-  if count
-    then do
-    mnum <- queryPagureCount server path params pagination
-    print $ fromMaybe (error' "pages not found") mnum
-    return []
-    else
-    queryPagurePaged server path params (pagination,paging)
-
 repoBranches :: String -> OutputFormat -> String -> IO ()
 repoBranches server format repo = do
   let namespace =
@@ -248,8 +236,10 @@ users server format pat = do
 username :: String -> OutputFormat -> String -> IO ()
 username server format user = do
   let path = "user" +/+ user
-  res <- queryPagure' server path $ makeKey "per_page" "1"
-  defaultPrinter format printName res
+  eres <- queryPagureSingle server path $ makeKey "per_page" "1"
+  case eres of
+    Left err -> error' err
+    Right res -> defaultPrinter format printName res
   where
     printName res =
       case lookupKey "user" res >>= lookupKey "fullname" of
@@ -260,7 +250,7 @@ groups :: String -> Bool -> OutputFormat -> Maybe String -> IO ()
 groups server count format mpat = do
   let path = "groups"
       params = maybeKey "pattern" mpat
-  pages <- queryPaged server count path params ("pagination", "page")
+  pages <- queryPagureCountPaged server count path params ("pagination", "page")
   mapM_ (defaultPrinter format (printKeyList "groups")) pages
 
 printKeyList :: String -> Object -> IO ()
@@ -323,7 +313,7 @@ groupProjects :: String -> Bool -> String -> IO ()
 groupProjects server count group = do
   let path = "group" +/+ group
       params = makeKey "projects" "1"
-  pages <- queryPaged server count path params ("pagination", "page")
+  pages <- queryPagureCountPaged server count path params ("pagination", "page")
   mapM_ (defaultPrinter FormatDefault printPage) pages
   where
     -- acl
