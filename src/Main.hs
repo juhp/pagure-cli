@@ -182,13 +182,6 @@ userRepos server count forks user =
     repos <- (if forks then pagureUserForks else pagureUserRepos) server user
     mapM_ T.putStrLn repos
 
--- maybeKey :: String -> Maybe String -> Query
--- maybeKey _ Nothing = []
--- maybeKey k mval = [(B.pack k, fmap B.pack mval)]
-
--- makeKey :: String -> String -> Query
--- makeKey k val = [(B.pack k, Just (B.pack val))]
-
 boolKey :: String -> Bool -> String -> Query
 boolKey _ False _ = []
 boolKey k True val = makeKey k val
