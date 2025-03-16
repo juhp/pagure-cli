@@ -1,3 +1,5 @@
 resolver: lts-22.43
 extra-deps:
+  # workaround local attoparsec failure:
+  - os-string-2.0.6
   - pagure-0.2.1

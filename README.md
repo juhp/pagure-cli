@@ -33,7 +33,7 @@ Count projects of a user:
 `$ pagure user --server pagure.io --count mattdm`
 
 ```
-120
+119
 ```
 
 ### List groups:
@@ -47,6 +47,7 @@ $ pagure groups
 `$ pagure group budgie-sig`
 
 ```
+rpms/bluejay
 rpms/libxfce4windowing
 rpms/sassc
 rpms/wlrctl
@@ -55,7 +56,7 @@ rpms/wlrctl
 `$ pagure group -c rust-sig`
 
 ```
-3093
+3727
 ```
 
 ## Help

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.3 (2025-03-16)
+- use pagureGroupRepos from pagure-0.2.1
+
 ## 0.2.2 (2024-05-06)
 - new add group and groupinfo commands
 - help: order commands with better grouping
