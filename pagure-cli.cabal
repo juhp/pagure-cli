@@ -30,6 +30,7 @@ executable pagure
                      , aeson-pretty
                      , base < 5
                      , bytestring
+                     , extra
                      , filepath
                      , http-query
                      , optparse-applicative

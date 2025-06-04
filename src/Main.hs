@@ -11,7 +11,7 @@ import Control.Applicative (
                             (<|>)
 #endif
                            )
-import Control.Monad (unless, when)
+import Control.Monad.Extra (unless, when, whenJust)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.Types
 #if MIN_VERSION_aeson(2,0,0)
@@ -148,7 +148,8 @@ listProjects server count format forks mnamespace mpackager mpattern = do
   let path = "projects"
       params = makeKey "short" "1" ++ fork ++ packager ++ maybeKey "namespace" mnamespace ++ maybeKey "pattern" mpattern
   pages <- queryPagureCountPaged server count path params ("pagination", "page")
-  mapM_ (defaultPrinter format printPage) pages
+  let projects = concatMap (lookupKey' "projects") pages
+  mapM_ (defaultPrinter format printProject) projects
   where
     -- (!orphan only works on pagure >=0.29)
     packager = case mpackager of
@@ -161,11 +162,10 @@ listProjects server count format forks mnamespace mpackager mpattern = do
       IncludeForks -> []
       OnlyForks -> makeKey "fork" "1"
 
-    printPage :: Object -> IO ()
-    printPage result = do
+    printProject :: Object -> IO ()
+    printProject project = do
       let key' = if isJust mnamespace then "name" else "fullname"
-          projects = lookupKey' "projects" result
-      (mapM_ T.putStrLn . mapMaybe (lookupKey key')) projects
+      whenJust (lookupKey key' project) T.putStrLn
 
 -- FIXME duplicates subset of listProjects
 userRepos :: String -> Bool -> Bool -> String -> IO ()
