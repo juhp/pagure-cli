@@ -25,6 +25,7 @@ import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import qualified Data.Vector as V
 import Data.Yaml (encode)
 import Network.HTTP.Query ((+/+))
 import SimpleCmd (error', (+-+))
@@ -41,6 +42,7 @@ main =
     listProjects
     <$> serverOpt
     <*> countOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> forksOpt
     <*> optional namespaceOpt
@@ -60,22 +62,26 @@ main =
   , Subcommand "project" "show project details" $
     projectInfo
     <$> serverOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> strArg "PROJECT"
   , Subcommand "branches" "list project branches" $
     repoBranches
     <$> serverOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> strArg "REPO"
   , Subcommand "git-url" "show project repo's git urls" $
     gitUrl
     <$> serverOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
     projectIssues
     <$> serverOpt
     <*> countOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> strArg "REPO"
     <*> switchWith 'A' "all" "list Open and Closed issues"
@@ -85,39 +91,46 @@ main =
   , Subcommand "issue" "show project issue" $
     projectIssue
     <$> serverOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> strArg "REPO"
     <*> argumentWith auto "ISSUE"
   , Subcommand "users" "list users" $
     users
     <$> serverOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> strArg "PATTERN"
   , Subcommand "username" "fullname of user" $
     username
     <$> serverOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> strArg "USERNAME"
   , Subcommand "userinfo" "show user details" $
     userInfo
     <$> serverOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> strArg "USERNAME"
   , Subcommand "groups" "list groups" $
     groups
     <$> serverOpt
     <*> countOpt
+    <*> nohideOpt
     <*> formatOpt
     <*> optional (strArg "PATTERN")
   , Subcommand "groupinfo" "show group details" $
     groupInfo
     <$> serverOpt
     <*> switchWith 'p' "projects" "List projects"
+    <*> nohideOpt
     <*> formatOpt
     <*> strArg "GROUP"
   ]
   where
     countOpt = switchWith 'c' "count" "Show number only"
+    nohideOpt = switchWith 'e' "show-empty" "Display empty lists and objects"
     formatOpt = flagWith' FormatJson 'j' "json" "Output JSON" <|> flagWith FormatDefault FormatYaml 'y' "yaml" "YAML output"
     namespaceOpt = strOptionWith 'n' "namespace" "NAMESPACE" "Specify project repo namespace"
     packagerOpt = Owner <$> ownerOpt <|> Committer <$> usernameOpt
@@ -136,20 +149,20 @@ data Forks = NoForks | IncludeForks | OnlyForks
 srcFedoraprojectOrg :: String
 srcFedoraprojectOrg = "src.fedoraproject.org"
 
-defaultPrinter :: OutputFormat -> (Object -> IO ()) -> Object -> IO ()
-defaultPrinter FormatDefault pr = pr
-defaultPrinter FormatJson _ = BL.putStrLn . encodePretty
-defaultPrinter FormatYaml _ = B.putStrLn . encode
+defaultPrinter :: Bool -> OutputFormat -> (Object -> IO ()) -> Object -> IO ()
+defaultPrinter _ FormatDefault pr = pr
+defaultPrinter nohide fmt _ = yamlPrinter nohide fmt
 
-listProjects :: String -> Bool -> OutputFormat -> Forks -> Maybe String -> Maybe Packager -> Maybe String -> IO ()
-listProjects server count format forks mnamespace mpackager mpattern = do
+listProjects :: String -> Bool -> Bool -> OutputFormat -> Forks -> Maybe String
+             -> Maybe Packager -> Maybe String -> IO ()
+listProjects server count nohide format forks mnamespace mpackager mpattern = do
   unless (count || isJust mpackager || isJust mpattern) $
     error' "Please give a package pattern, --count, or --owner/--username"
   let path = "projects"
       params = makeKey "short" "1" ++ fork ++ packager ++ maybeKey "namespace" mnamespace ++ maybeKey "pattern" mpattern
   pages <- queryPagureCountPaged server count path params ("pagination", "page")
   let projects = concatMap (lookupKey' "projects") pages
-  mapM_ (defaultPrinter format printProject) projects
+  mapM_ (defaultPrinter nohide format printProject) projects
   where
     -- (!orphan only works on pagure >=0.29)
     packager = case mpackager of
@@ -187,13 +200,14 @@ boolKey _ False _ = []
 boolKey k True val = makeKey k val
 
 -- FIXME limit max number of issues
-projectIssues :: String -> Bool -> OutputFormat -> String -> Bool -> Maybe String -> Maybe String -> Maybe String -> IO ()
-projectIssues server count format repo allstatus mauthor msince mpat = do
+projectIssues :: String -> Bool -> Bool -> OutputFormat -> String -> Bool
+              -> Maybe String -> Maybe String -> Maybe String -> IO ()
+projectIssues server count nohide format repo allstatus mauthor msince mpat = do
   let path = repo +/+ "issues"
       params = [makeItem "status" "all" | allstatus] ++
                maybeKey "author" mauthor ++ maybeKey "since" msince
   pages <- queryPagureCountPaged server count path params ("pagination", "page")
-  mapM_ (defaultPrinter format printIssues) pages
+  mapM_ (defaultPrinter nohide format printIssues) pages
   where
     printIssues :: Object -> IO ()
     printIssues result = do
@@ -217,54 +231,54 @@ projectIssues server count format repo allstatus mauthor msince mpat = do
         status <- obj .: "status"
         return (id',title,status)
 
-repoBranches :: String -> OutputFormat -> String -> IO ()
-repoBranches server format repo = do
+repoBranches :: String -> Bool -> OutputFormat -> String -> IO ()
+repoBranches server nohide format repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
       path = namespace ++ repo +/+ "git/branches"
   eres <- queryPagureSingle server path []
-  either error' (defaultPrinter format (printKeyList "branches")) eres
+  either error' (defaultPrinter nohide format (printKeyList "branches")) eres
 
-users :: String -> OutputFormat -> String -> IO ()
-users server format pat = do
+users :: String -> Bool -> OutputFormat -> String -> IO ()
+users server nohide format pat = do
   let path = "users"
       params = makeKey "pattern" pat
   res <- queryPagure server path params
-  defaultPrinter format (printKeyList "users") res
+  defaultPrinter nohide format (printKeyList "users") res
 
-username :: String -> OutputFormat -> String -> IO ()
-username server format user = do
+username :: String -> Bool -> OutputFormat -> String -> IO ()
+username server nohide format user = do
   let path = "user" +/+ user
   eres <- queryPagureSingle server path $ makeKey "per_page" "1"
   case eres of
     Left err -> error' err
-    Right res -> defaultPrinter format printName res
+    Right res -> defaultPrinter nohide format printName res
   where
     printName res =
       case lookupKey "user" res >>= lookupKey "fullname" of
         Nothing -> error' "User fullname not found"
         Just fn -> T.putStrLn fn
 
-groups :: String -> Bool -> OutputFormat -> Maybe String -> IO ()
-groups server count format mpat = do
+groups :: String -> Bool -> Bool -> OutputFormat -> Maybe String -> IO ()
+groups server count nohide format mpat = do
   let path = "groups"
       params = maybeKey "pattern" mpat
   pages <- queryPagureCountPaged server count path params ("pagination", "page")
-  mapM_ (defaultPrinter format (printKeyList "groups")) pages
+  mapM_ (defaultPrinter nohide format (printKeyList "groups")) pages
 
 printKeyList :: String -> Object -> IO ()
 printKeyList key' res =
   mapM_ T.putStrLn (lookupKey' (T.pack key') res :: [Text])
 
-gitUrl :: String -> OutputFormat -> String -> IO ()
-gitUrl server format repo = do
+gitUrl :: String -> Bool -> OutputFormat -> String -> IO ()
+gitUrl server nohide format repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
       path = namespace ++ repo +/+ "git/urls"
   res <- queryPagure server path []
-  defaultPrinter format printURLs res
+  defaultPrinter nohide format printURLs res
   where
     printURLs result =
       mapM_ T.putStrLn $
@@ -278,35 +292,56 @@ gitUrl server format repo = do
 #endif
     localLookupKey = lookupKey' . T.pack
 
-yamlPrinter :: OutputFormat -> Object -> IO ()
-yamlPrinter FormatDefault = yamlPrinter FormatYaml
-yamlPrinter FormatJson = BL.putStrLn . encodePretty
-yamlPrinter FormatYaml = B.putStrLn . encode
+yamlPrinter :: Bool -> OutputFormat -> Object -> IO ()
+yamlPrinter nohide format =
+  case format of
+    FormatDefault -> yamlPrinter nohide FormatYaml
+    FormatJson -> BL.putStrLn . encodePretty . hideEmpty
+    FormatYaml -> B.putStrLn . encode . hideEmpty
+  where
+    hideEmpty = if nohide then id else cleanObject
 
-projectInfo :: String -> OutputFormat -> String -> IO ()
-projectInfo server format repo = do
+cleanObject :: Object -> Object
+cleanObject = M.mapMaybe go
+  where
+    go :: Value -> Maybe Value
+    -- drop empty lists
+    go (Array v) | V.null v = Nothing
+                 | otherwise = Just $ Array (V.map (wrap go) v)
+                 where
+                   wrap f (Object o) = Object (M.mapMaybe f o)
+                   wrap f (Array a)  = Array (V.map (wrap f) a)
+                   wrap _ x          = x
+    -- drop empty objects
+    go (Object o) =
+        let cleaned = M.mapMaybe go o
+        in if M.null cleaned then Nothing else Just (Object cleaned)
+    go other = Just other
+
+projectInfo :: String -> Bool -> OutputFormat -> String -> IO ()
+projectInfo server nohide format repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
       path = namespace ++ repo
   eval <- pagureProjectInfo server path
-  either error' (yamlPrinter format) eval
+  either error' (yamlPrinter nohide format) eval
 
-projectIssue :: String -> OutputFormat -> String -> Int -> IO ()
-projectIssue server format repo issue = do
+projectIssue :: String -> Bool -> OutputFormat -> String -> Int -> IO ()
+projectIssue server nohide format repo issue = do
   eval <- pagureProjectIssueInfo server repo issue
-  either error' (yamlPrinter format) eval
+  either error' (yamlPrinter nohide format) eval
 
-userInfo :: String -> OutputFormat -> String -> IO ()
-userInfo server format user = do
+userInfo :: String -> Bool -> OutputFormat -> String -> IO ()
+userInfo server nohide format user = do
   eval <- pagureUserInfo server user []
-  either error' (yamlPrinter format) eval
+  either error' (yamlPrinter nohide format) eval
 
-groupInfo :: String -> Bool -> OutputFormat -> String -> IO ()
-groupInfo server projects format group = do
+groupInfo :: String -> Bool -> Bool -> OutputFormat -> String -> IO ()
+groupInfo server projects nohide format group = do
   let params = [makeItem "projects" "1" | projects]
   eval <- pagureGroupInfo server group params
-  either error' (yamlPrinter format) eval
+  either error' (yamlPrinter nohide format) eval
 
 -- FIXME support acl parameter (admin, commit or ticket)
 groupProjects :: String -> Bool -> String -> IO ()

@@ -39,6 +39,7 @@ executable pagure
                      , simple-cmd-args >= 0.1.6
                      , text
                      , unordered-containers
+                     , vector
                      , yaml
 
   if impl(ghc<8.0)
