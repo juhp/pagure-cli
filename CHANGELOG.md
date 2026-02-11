@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.2.3 (2025-03-16)
+## 0.2.3 (2026-02-11)
+- hide output of empty lists and object by default (behind --show-empty)
+- add 'contributors' command
 - use pagureGroupRepos from pagure-0.2.1
 
 ## 0.2.2 (2024-05-06)

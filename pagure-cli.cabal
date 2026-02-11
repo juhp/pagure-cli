@@ -10,14 +10,15 @@ license:             GPL-2
 license-file:        LICENSE
 author:              Jens Petersen <juhpetersen@gmail.com>
 maintainer:          Jens Petersen <juhpetersen@gmail.com>
-copyright:           2019-2020,2022,2024-2025 Jens Petersen
+copyright:           2019-2020,2022,2024-2026 Jens Petersen
 category:            Utility
 build-type:          Simple
 extra-doc-files:     README.md
                      CHANGELOG.md
 tested-with:         GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5,
                      GHC == 8.8.4, GHC == 8.10.4, GHC == 9.0.2, GHC == 9.2.8,
-                     GHC == 9.4.8, GHC == 9.6.6, GHC == 9.8.4, GHC == 9.10.1
+                     GHC == 9.4.8, GHC == 9.6.6, GHC == 9.8.4, GHC == 9.10.3,
+                     GHC == 9.12.3
 
 source-repository head
   type:                git

@@ -30,10 +30,10 @@ One can also filter by owner or committer.
 
 Count projects of a user:
 
-`$ pagure user --server pagure.io --count mattdm`
+`$ pagure user --server pagure.io --count jspaleta`
 
 ```
-119
+11
 ```
 
 ### List groups:
@@ -48,7 +48,12 @@ $ pagure groups
 
 ```
 rpms/bluejay
+rpms/budgie-desktop-services
+rpms/budgie-display-configurator
+rpms/gtklock
+rpms/gtk-session-lock
 rpms/libxfce4windowing
+rpms/pocillo-gtk-theme
 rpms/sassc
 rpms/wlrctl
 ```
@@ -56,7 +61,7 @@ rpms/wlrctl
 `$ pagure group -c rust-sig`
 
 ```
-3727
+4266
 ```
 
 ## Help
@@ -64,7 +69,7 @@ rpms/wlrctl
 `$ pagure --version`
 
 ```
-0.2.2
+0.2.3
 ```
 
 `$ pagure --help`
@@ -87,6 +92,7 @@ Available commands:
   project                  show project details
   branches                 list project branches
   git-url                  show project repo's git urls
+  contributors             show project repo's contributors
   issues                   list project issues
   issue                    show project issue
   users                    list users
@@ -99,7 +105,7 @@ Use `--help` to get help on individual commands:
 
 
 ## Installation
-pagure-cli is packaged in Fedora and EPEL 9: <https://src.fedoraproject.org/rpms/pagure-cli>
+pagure-cli is packaged in Fedora and EPEL: <https://src.fedoraproject.org/rpms/pagure-cli>
 
 ## Build from source
 To build the latest release you will need cabal-install and ghc, or stack:
