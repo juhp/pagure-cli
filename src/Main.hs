@@ -77,6 +77,12 @@ main =
     <*> nohideOpt
     <*> formatOpt
     <*> strArg "REPO"
+  , Subcommand "contributors" "show project repo's contributors" $
+    contributors
+    <$> serverOpt
+    <*> nohideOpt
+    <*> formatOpt
+    <*> strArg "REPO"
   , Subcommand "issues" "list project issues" $
     projectIssues
     <$> serverOpt
@@ -291,6 +297,15 @@ gitUrl server nohide format repo = do
                       M.HashMap Text Text
 #endif
     localLookupKey = lookupKey' . T.pack
+
+contributors :: String -> Bool -> OutputFormat -> String -> IO ()
+contributors server nohide format repo = do
+  let namespace =
+        if server == srcFedoraprojectOrg && '/' `notElem` repo
+        then "rpms/" else ""
+      path = namespace ++ repo +/+ "contributors"
+  res <- queryPagure server path []
+  yamlPrinter nohide format res
 
 yamlPrinter :: Bool -> OutputFormat -> Object -> IO ()
 yamlPrinter nohide format =
