@@ -35,7 +35,7 @@ executable pagure
                      , filepath
                      , http-query
                      , optparse-applicative
-                     , pagure >= 0.2.1
+                     , pagure >= 0.2.2
                      , simple-cmd
                      , simple-cmd-args >= 0.1.6
                      , text

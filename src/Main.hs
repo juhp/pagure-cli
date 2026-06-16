@@ -21,6 +21,7 @@ import qualified Data.HashMap.Lazy as M
 #endif
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.List.Extra (lower)
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -96,6 +97,24 @@ main =
     <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
   , Subcommand "issue" "show project issue" $
     projectIssue
+    <$> serverOpt
+    <*> nohideOpt
+    <*> formatOpt
+    <*> strArg "REPO"
+    <*> argumentWith auto "ISSUE"
+  , Subcommand "pull-requests" "list project pull requests" $
+    projectPRs
+    <$> serverOpt
+    <*> countOpt
+    <*> nohideOpt
+    <*> formatOpt
+    <*> strArg "REPO"
+    <*> switchWith 'A' "all" "list Open and Closed issues"
+    <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator")
+    <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date")
+    <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
+  , Subcommand "pull-request" "show project PR" $
+    projectPR
     <$> serverOpt
     <*> nohideOpt
     <*> formatOpt
@@ -237,6 +256,41 @@ projectIssues server count nohide format repo allstatus mauthor msince mpat = do
         status <- obj .: "status"
         return (id',title,status)
 
+-- FIXME limit max number of issues
+projectPRs :: String -> Bool -> Bool -> OutputFormat -> String -> Bool
+              -> Maybe String -> Maybe String -> Maybe String -> IO ()
+projectPRs server count nohide format repo allstatus mauthor msince mpat = do
+  let namespace =
+        if server == srcFedoraprojectOrg && '/' `notElem` repo
+        then "rpms/" else ""
+      path = namespace ++ repo +/+ "pull-requests"
+      params = [makeItem "status" "all" | allstatus] ++
+               maybeKey "author" mauthor ++ maybeKey "since" msince
+  pages <- queryPagureCountPaged server count path params ("pagination", "page")
+  mapM_ (defaultPrinter nohide format printPRs) pages
+  where
+    printPRs :: Object -> IO ()
+    printPRs result = do
+      let prs = lookupKey' "requests" result :: [Object]
+      mapM_ printPR prs
+
+    printPR :: Object -> IO ()
+    printPR pr = do
+      let mfields = parsePR pr
+      case mfields of
+        Nothing -> putStrLn "parsing issue failed"
+        Just (id',title,status) ->
+          when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $
+          putStrLn $ "https://" ++ server +/+ repo +/+ "pull-request" +/+ show id' +-+ "(" ++ lower (T.unpack status) ++ "):" +-+ T.unpack title
+
+    parsePR :: Object -> Maybe (Integer, Text, Text)
+    parsePR =
+      parseMaybe $ \obj -> do
+        id' <- obj .: "id"
+        title <- obj .: "title"
+        status <- obj .: "status"
+        return (id',title,status)
+
 repoBranches :: String -> Bool -> OutputFormat -> String -> IO ()
 repoBranches server nohide format repo = do
   let namespace =
@@ -345,6 +399,15 @@ projectInfo server nohide format repo = do
 projectIssue :: String -> Bool -> OutputFormat -> String -> Int -> IO ()
 projectIssue server nohide format repo issue = do
   eval <- pagureProjectIssueInfo server repo issue
+  either error' (yamlPrinter nohide format) eval
+
+projectPR :: String -> Bool -> OutputFormat -> String -> Int -> IO ()
+projectPR server nohide format repo issue = do
+  let namespace =
+        if server == srcFedoraprojectOrg && '/' `notElem` repo
+        then "rpms/" else ""
+      project = namespace ++ repo
+  eval <- pagureProjectPRInfo server project issue
   either error' (yamlPrinter nohide format) eval
 
 userInfo :: String -> Bool -> OutputFormat -> String -> IO ()
