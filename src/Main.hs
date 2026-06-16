@@ -138,6 +138,11 @@ main =
     <*> nohideOpt
     <*> formatOpt
     <*> strArg "USERNAME"
+  , Subcommand "user-activity-stats" "show user activity stats" $
+    userActivityStats
+    <$> serverOpt
+    <*> formatOpt
+    <*> strArg "USERNAME"
   , Subcommand "groups" "list groups" $
     groups
     <$> serverOpt
@@ -414,6 +419,11 @@ userInfo :: String -> Bool -> OutputFormat -> String -> IO ()
 userInfo server nohide format user = do
   eval <- pagureUserInfo server user []
   either error' (yamlPrinter nohide format) eval
+
+userActivityStats :: String -> OutputFormat -> String -> IO ()
+userActivityStats server format user = do
+  eval <- pagureUserActivityStats server False user
+  either error' (yamlPrinter False format) eval
 
 groupInfo :: String -> Bool -> Bool -> OutputFormat -> String -> IO ()
 groupInfo server projects nohide format group = do
