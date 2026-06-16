@@ -156,6 +156,14 @@ main =
     <*> countOpt
     <*> formatOpt
     <*> strArg "USERNAME"
+  , Subcommand "user-requests-filed" "show user's filed pull requests" $
+    userRequestsFiled
+    <$> serverOpt
+    <*> countOpt
+    <*> formatOpt
+    <*> optional (strOptionWith 't' "title" "pattern" "Filter requests by title")
+    <*> optional (strOptionWith 'S' "status" "open|closed|merged|all" "Select by status [default: Open]")
+    <*> strArg "USERNAME"
   , Subcommand "groups" "list groups" $
     groups
     <$> serverOpt
@@ -447,6 +455,31 @@ userIssues :: String -> Bool -> OutputFormat -> String -> IO ()
 userIssues server count format user = do
   issues <- pagureUserIssues server count user
   mapM_ (yamlPrinter False format) issues
+
+userRequestsFiled :: String -> Bool -> OutputFormat -> Maybe String
+                  -> Maybe String -> String -> IO ()
+userRequestsFiled server count format mpat mstatus user = do
+  result <- pagureUserRequestsFiled server count (fromMaybe "Open" mstatus) user
+  let requests = concatMap (lookupKey' "requests") result
+  mapM_ (defaultPrinter False format printPR) requests
+  where
+    printPR :: Object -> IO ()
+    printPR pr = do
+      let mfields = parsePR pr
+      case mfields of
+        Nothing -> putStrLn "parsing PR failed"
+        Just (id',title,repo) ->
+          when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $
+          putStrLn $ "https://" ++ server +/+ T.unpack repo +/+ "pull-request" +/+ show id' +-+ show (T.unpack title)
+
+    parsePR :: Object -> Maybe (Integer, Text, Text)
+    parsePR =
+      parseMaybe $ \obj -> do
+        id' <- obj .: "id"
+        title <- obj .: "title"
+        proj <- obj .: "project"
+        repo <- proj .: "fullname"
+        return (id',title,repo)
 
 groupInfo :: String -> Bool -> Bool -> OutputFormat -> String -> IO ()
 groupInfo server projects nohide format group = do
