@@ -150,6 +150,12 @@ main =
     <*> switchWith 'S' "summary" "Summarize (group) activity per project"
     <*> strArg "USERNAME"
     <*> strArg "YYYY-MM-DD"
+  , Subcommand "user-issues" "show user's issues" $
+    userIssues
+    <$> serverOpt
+    <*> countOpt
+    <*> formatOpt
+    <*> strArg "USERNAME"
   , Subcommand "groups" "list groups" $
     groups
     <$> serverOpt
@@ -436,6 +442,11 @@ userActivityDate :: String -> OutputFormat -> Bool -> String -> String -> IO ()
 userActivityDate server format summary user date = do
   eval <- pagureUserActivityDate server summary user date
   either error' (yamlPrinter False format) eval
+
+userIssues :: String -> Bool -> OutputFormat -> String -> IO ()
+userIssues server count format user = do
+  issues <- pagureUserIssues server count user
+  mapM_ (yamlPrinter False format) issues
 
 groupInfo :: String -> Bool -> Bool -> OutputFormat -> String -> IO ()
 groupInfo server projects nohide format group = do
