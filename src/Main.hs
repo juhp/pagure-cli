@@ -143,6 +143,13 @@ main =
     <$> serverOpt
     <*> formatOpt
     <*> strArg "USERNAME"
+  , Subcommand "user-activity-date" "show user activity on date" $
+    userActivityDate
+    <$> serverOpt
+    <*> formatOpt
+    <*> switchWith 'S' "summary" "Summarize (group) activity per project"
+    <*> strArg "USERNAME"
+    <*> strArg "YYYY-MM-DD"
   , Subcommand "groups" "list groups" $
     groups
     <$> serverOpt
@@ -423,6 +430,11 @@ userInfo server nohide format user = do
 userActivityStats :: String -> OutputFormat -> String -> IO ()
 userActivityStats server format user = do
   eval <- pagureUserActivityStats server False user
+  either error' (yamlPrinter False format) eval
+
+userActivityDate :: String -> OutputFormat -> Bool -> String -> String -> IO ()
+userActivityDate server format summary user date = do
+  eval <- pagureUserActivityDate server summary user date
   either error' (yamlPrinter False format) eval
 
 groupInfo :: String -> Bool -> Bool -> OutputFormat -> String -> IO ()
