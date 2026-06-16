@@ -203,7 +203,7 @@ listProjects server count nohide format forks mnamespace mpackager mpattern = do
   where
     -- (!orphan only works on pagure >=0.29)
     packager = case mpackager of
-      Nothing -> boolKey "owner" (server == srcFedoraprojectOrg) "!orphan"
+      Nothing -> boolKey (server == srcFedoraprojectOrg) "owner" "!orphan"
       Just (Owner o) -> makeKey "owner" o
       Just (Committer c) -> makeKey "username" c
 
@@ -232,16 +232,16 @@ userRepos server count forks user =
     repos <- (if forks then pagureUserForks else pagureUserRepos) server user
     mapM_ T.putStrLn repos
 
-boolKey :: String -> Bool -> String -> Query
-boolKey _ False _ = []
-boolKey k True val = makeKey k val
+boolKey :: Bool -> String -> String -> Query
+boolKey False _ _ = []
+boolKey True k val = makeKey k val
 
 -- FIXME limit max number of issues
 projectIssues :: String -> Bool -> Bool -> OutputFormat -> String -> Bool
               -> Maybe String -> Maybe String -> Maybe String -> IO ()
 projectIssues server count nohide format repo allstatus mauthor msince mpat = do
   let path = repo +/+ "issues"
-      params = [makeItem "status" "all" | allstatus] ++
+      params = boolKey allstatus "status" "all" ++
                maybeKey "author" mauthor ++ maybeKey "since" msince
   pages <- queryPagureCountPaged server count path params ("pagination", "page")
   mapM_ (defaultPrinter nohide format printIssues) pages
@@ -439,7 +439,7 @@ userActivityDate server format summary user date = do
 
 groupInfo :: String -> Bool -> Bool -> OutputFormat -> String -> IO ()
 groupInfo server projects nohide format group = do
-  let params = [makeItem "projects" "1" | projects]
+  let params = boolKey projects "projects" "1"
   eval <- pagureGroupInfo server group params
   either error' (yamlPrinter nohide format) eval
 
