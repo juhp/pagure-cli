@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3 (2026-06-16)
+- add 'pull-requests' and 'pull-request' commands
+- add 'user-activity-stats' command
+- add 'user-activity-date' command
+- add 'user-issues' command
+- add 'user-requests-filed' command
+- add 'user-requests-actionable' command
+
 ## 0.2.3 (2026-02-11)
 - hide output of empty lists and object by default (behind --show-empty)
 - add 'contributors' command

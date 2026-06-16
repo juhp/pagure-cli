@@ -58,10 +58,11 @@ rpms/sassc
 rpms/wlrctl
 ```
 
+
 `$ pagure group -c rust-sig`
 
 ```
-4266
+4526
 ```
 
 ## Help
@@ -69,7 +70,7 @@ rpms/wlrctl
 `$ pagure --version`
 
 ```
-0.2.3
+0.3
 ```
 
 `$ pagure --help`
@@ -95,9 +96,16 @@ Available commands:
   contributors             show project repo's contributors
   issues                   list project issues
   issue                    show project issue
+  pull-requests            list project pull requests
+  pull-request             show project PR
   users                    list users
   username                 fullname of user
   userinfo                 show user details
+  user-activity-stats      show user activity stats
+  user-activity-date       show user activity on date
+  user-issues              show user's issues
+  user-requests-filed      show user's filed pull requests
+  user-requests-actionable show user's actionable pull requests
   groups                   list groups
   groupinfo                show group details
 ```
