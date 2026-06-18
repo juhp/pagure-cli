@@ -264,7 +264,7 @@ projectIssues server count nohide format allstatus mauthor msince mpat repo = do
         Nothing -> putStrLn "parsing issue failed"
         Just (id',title,status) ->
           when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $
-          putStrLn $ "https://" ++ server +/+ repo +/+ "issue" +/+ show id' +-+ "(" ++ T.unpack status ++ "):" +-+ T.unpack title
+          putStrLn $ "https://" ++ server +/+ repo +/+ "issue" +/+ show id' +-+ (if allstatus then "(" ++ T.unpack status ++ "):" else "") +-+ T.unpack title
 
     parseIssue :: Object -> Maybe (Integer, Text, Text)
     parseIssue =
@@ -299,7 +299,7 @@ projectPRs server count nohide format allstatus mauthor msince mpat repo = do
         Nothing -> putStrLn "parsing issue failed"
         Just (id',title,status) ->
           when (isNothing mpat || T.pack (fromJust mpat) `T.isInfixOf` title) $
-          putStrLn $ "https://" ++ server +/+ repo +/+ "pull-request" +/+ show id' +-+ "(" ++ lower (T.unpack status) ++ "):" +-+ T.unpack title
+          putStrLn $ "https://" ++ server +/+ repo +/+ "pull-request" +/+ show id' +-+ (if allstatus then "(" ++ lower (T.unpack status) ++ "):" else "") +-+ T.unpack title
 
     parsePR :: Object -> Maybe (Integer, Text, Text)
     parsePR =
