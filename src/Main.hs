@@ -90,11 +90,11 @@ main =
     <*> countOpt
     <*> nohideOpt
     <*> formatOpt
-    <*> strArg "REPO"
     <*> switchWith 'A' "all" "list Open and Closed issues"
     <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator")
     <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date")
     <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
+    <*> strArg "REPO"
   , Subcommand "issue" "show project issue" $
     projectIssue
     <$> serverOpt
@@ -108,11 +108,11 @@ main =
     <*> countOpt
     <*> nohideOpt
     <*> formatOpt
-    <*> strArg "REPO"
     <*> switchWith 'A' "all" "list Open and Closed issues"
     <*> optional (strOptionWith 'a' "author" "AUTHOR" "Filter issues by creator")
     <*> optional (strOptionWith 'S' "since" "Y-M-D" "Filter issues updated after date")
     <*> optional (strOptionWith 't' "title" "pattern" "Filter issues by title")
+    <*> strArg "REPO"
   , Subcommand "pull-request" "show project PR" $
     projectPR
     <$> serverOpt
@@ -243,9 +243,9 @@ boolKey False _ _ = []
 boolKey True k val = makeKey k val
 
 -- FIXME limit max number of issues
-projectIssues :: String -> Bool -> Bool -> OutputFormat -> String -> Bool
-              -> Maybe String -> Maybe String -> Maybe String -> IO ()
-projectIssues server count nohide format repo allstatus mauthor msince mpat = do
+projectIssues :: String -> Bool -> Bool -> OutputFormat -> Bool
+              -> Maybe String -> Maybe String -> Maybe String -> String -> IO ()
+projectIssues server count nohide format allstatus mauthor msince mpat repo = do
   let path = repo +/+ "issues"
       params = boolKey allstatus "status" "all" ++
                maybeKey "author" mauthor ++ maybeKey "since" msince
@@ -275,9 +275,9 @@ projectIssues server count nohide format repo allstatus mauthor msince mpat = do
         return (id',title,status)
 
 -- FIXME limit max number of issues
-projectPRs :: String -> Bool -> Bool -> OutputFormat -> String -> Bool
-              -> Maybe String -> Maybe String -> Maybe String -> IO ()
-projectPRs server count nohide format repo allstatus mauthor msince mpat = do
+projectPRs :: String -> Bool -> Bool -> OutputFormat -> Bool -> Maybe String
+           -> Maybe String -> Maybe String -> String -> IO ()
+projectPRs server count nohide format allstatus mauthor msince mpat repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
         then "rpms/" else ""
