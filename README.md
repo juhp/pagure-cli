@@ -8,6 +8,8 @@
 A [pagure](https://docs.pagure.org/pagure/) gitforge client for querying
 and listing projects (repos), users, groups, and issues.
 
+Since version 0.3, a client library provides the module `Fedora.Pagure.Client`.
+
 ## Usage
 By default it uses the [src.fedoraproject.org](https://src.fedoraproject.org/)
 Pagure server instance (aka Fedora dist-git), but this can be overriden
