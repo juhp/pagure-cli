@@ -32,10 +32,10 @@ One can also filter by owner or committer.
 
 Count projects of a user:
 
-`$ pagure user --server pagure.io --count jspaleta`
+`$ pagure user --count petersen`
 
 ```
-11
+825
 ```
 
 ### List groups:
@@ -54,6 +54,8 @@ rpms/budgie-desktop-services
 rpms/budgie-display-configurator
 rpms/gtklock
 rpms/gtk-session-lock
+forks/packit/rpms/labwc
+rpms/labwc
 rpms/libxfce4windowing
 rpms/pocillo-gtk-theme
 rpms/sassc
@@ -64,7 +66,7 @@ rpms/wlrctl
 `$ pagure group -c rust-sig`
 
 ```
-4526
+4826
 ```
 
 ## Help
@@ -125,7 +127,7 @@ To build the latest release you will need cabal-install and ghc, or stack:
 Or to build from the git source, run the commands without the package name.
 
 ## Contributions
-Pagure rest API can be found on pagure servers: eg <https://pagure.io/api/0>.
+Pagure rest API can be found on pagure servers: eg <https://src.fedoraproject.org/api/0/>.
 There are still many unsupported commands and options.
 Please open a ticket or PR to request adding more at
 <https://github.com/juhp/pagure-cli>.
@@ -139,5 +141,4 @@ The project is distributed under GPLv2+.
 After writing the initial version I discovered that
 Ricky Elrod (relrod) had made <https://github.com/fedora-infra/pagure-cli>.
 
-There is a library client in Rust <https://pagure.io/ironthree/pagure-rs>
-by decathorpe.
+A library client in Rust <https://pagure.io/ironthree/pagure-rs> by decathorpe.
