@@ -133,6 +133,8 @@ Please open a ticket or PR to request adding more at
 Also part of this client uses the simple
 [pagure-hs](https://hackage.haskell.org/package/pagure) bindings.
 
+The project is distributed under GPLv2+.
+
 ## Other pagure clients
 After writing the initial version I discovered that
 Ricky Elrod (relrod) had made <https://github.com/fedora-infra/pagure-cli>.
