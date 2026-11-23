@@ -74,13 +74,24 @@ srcFedoraprojectOrg :: String
 srcFedoraprojectOrg = "src.fedoraproject.org"
 
 -- | default print helper
-defaultPrinter :: Bool -> OutputFormat -> (Object -> IO ()) -> Object -> IO ()
+defaultPrinter :: Bool -- ^ no hide empty
+               -> OutputFormat
+               -> (Object -> IO ()) -- ^ printer
+               -> Object -- ^ JSON
+               -> IO ()
 defaultPrinter _ FormatDefault pr = pr
 defaultPrinter nohide fmt _ = yamlPrinter nohide fmt
 
 -- | List projects
-listProjects :: String -> Bool -> Bool -> OutputFormat -> Forks -> Maybe String
-             -> Maybe Packager -> Maybe String -> IO ()
+listProjects :: String -- ^ server
+             -> Bool -- ^ count
+             -> Bool -- ^ no hide
+             -> OutputFormat
+             -> Forks
+             -> Maybe String -- ^ namespace
+             -> Maybe Packager
+             -> Maybe String -- ^ pattern
+             -> IO ()
 listProjects server count nohide format forks mnamespace mpackager mpattern = do
   unless (count || isJust mpackager || isJust mpattern) $
     error' "Please give a package pattern, --count, or --owner/--username"
@@ -108,7 +119,11 @@ listProjects server count nohide format forks mnamespace mpackager mpattern = do
 
 -- FIXME duplicates subset of listProjects
 -- | Variant of `pagureUserRepos` or `pagureUserForks`
-userRepos :: String -> Bool -> Bool -> String -> IO ()
+userRepos :: String -- ^ server
+          -> Bool -- ^ count
+          -> Bool -- ^ forks
+          -> String -- ^ user
+          -> IO ()
 userRepos server count forks user =
   if count then do
     let path = "user" +/+ user
@@ -130,8 +145,16 @@ boolKey True k val = makeKey k val
 -- | List project issues
 --
 -- Please use allstatus with care since it can list of a lot issues
-projectIssues :: String -> Bool -> Bool -> OutputFormat -> Bool
-              -> Maybe String -> Maybe String -> Maybe String -> String -> IO ()
+projectIssues :: String -- ^ server
+              -> Bool -- ^ count
+              -> Bool -- ^ no hide
+              -> OutputFormat
+              -> Bool -- ^ all status
+              -> Maybe String -- ^ author
+              -> Maybe String -- ^ since
+              -> Maybe String -- ^ pattern
+              -> String -- ^ repo
+              -> IO ()
 projectIssues server count nohide format allstatus mauthor msince mpat repo = do
   let path = repo +/+ "issues"
       params = boolKey allstatus "status" "all" ++
@@ -164,8 +187,16 @@ projectIssues server count nohide format allstatus mauthor msince mpat repo = do
 -- | List pull-requests
 --
 -- Please use allstatus with care since it can list of a lot of requests
-projectPRs :: String -> Bool -> Bool -> OutputFormat -> Bool -> Maybe String
-           -> Maybe String -> Maybe String -> String -> IO ()
+projectPRs :: String -- ^ server
+           -> Bool -- ^ count
+           -> Bool -- ^ no hide
+           -> OutputFormat
+           -> Bool -- ^ all status
+           -> Maybe String -- ^ author
+           -> Maybe String -- ^ since
+           -> Maybe String -- ^ pattern
+           -> String -- ^ repo
+           -> IO ()
 projectPRs server count nohide format allstatus mauthor msince mpat repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
@@ -199,7 +230,11 @@ projectPRs server count nohide format allstatus mauthor msince mpat repo = do
         return (id',title,status)
 
 -- | List repo git branches
-repoBranches :: String -> Bool -> OutputFormat -> String -> IO ()
+repoBranches :: String -- ^ server
+             -> Bool -- ^ no hide
+             -> OutputFormat
+             -> String -- ^ repo
+             -> IO ()
 repoBranches server nohide format repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
@@ -209,7 +244,11 @@ repoBranches server nohide format repo = do
   either error' (defaultPrinter nohide format (printKeyList "branches")) eres
 
 -- | List users matching pattern
-users :: String -> Bool -> OutputFormat -> String -> IO ()
+users :: String -- ^ server
+      -> Bool -- ^ no hide
+      -> OutputFormat
+      -> String -- ^ pattern
+      -> IO ()
 users server nohide format pat = do
   let path = "users"
       params = makeKey "pattern" pat
@@ -217,7 +256,11 @@ users server nohide format pat = do
   defaultPrinter nohide format (printKeyList "users") res
 
 -- | Get full name of user
-username :: String -> Bool -> OutputFormat -> String -> IO ()
+username :: String -- ^ server
+         -> Bool -- ^ no hide
+         -> OutputFormat
+         -> String -- ^ user
+         -> IO ()
 username server nohide format user = do
   let path = "user" +/+ user
   eres <- queryPagureSingle server path $ makeKey "per_page" "1"
@@ -231,7 +274,12 @@ username server nohide format user = do
         Just fn -> T.putStrLn fn
 
 -- | List groups with optional pattern
-groups :: String -> Bool -> Bool -> OutputFormat -> Maybe String -> IO ()
+groups :: String -- ^ server
+       -> Bool -- ^ count
+       -> Bool -- ^ no hide
+       -> OutputFormat
+       -> Maybe String -- ^ pattern
+       -> IO ()
 groups server count nohide format mpat = do
   let path = "groups"
       params = maybeKey "pattern" mpat
@@ -243,7 +291,11 @@ printKeyList key' res =
   mapM_ T.putStrLn (lookupKey' (T.pack key') res :: [Text])
 
 -- | Print git url of project
-gitUrl :: String -> Bool -> OutputFormat -> String -> IO ()
+gitUrl :: String -- ^ server
+       -> Bool -- ^ no hide
+       -> OutputFormat
+       -> String -- ^ repo
+       -> IO ()
 gitUrl server nohide format repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
@@ -265,7 +317,11 @@ gitUrl server nohide format repo = do
     localLookupKey = lookupKey' . T.pack
 
 -- | List contributors of project
-contributors :: String -> Bool -> OutputFormat -> String -> IO ()
+contributors :: String -- ^ server
+             -> Bool -- ^ no hide
+             -> OutputFormat
+             -> String -- ^ repo
+             -> IO ()
 contributors server nohide format repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
@@ -275,7 +331,10 @@ contributors server nohide format repo = do
   yamlPrinter nohide format res
 
 -- | Yaml printer
-yamlPrinter :: Bool -> OutputFormat -> Object -> IO ()
+yamlPrinter :: Bool -- ^ no hide
+            -> OutputFormat
+            -> Object
+            -> IO ()
 yamlPrinter nohide format =
   case format of
     FormatDefault -> yamlPrinter nohide FormatYaml
@@ -302,7 +361,11 @@ yamlPrinter nohide format =
         go other = Just other
 
 -- | Show project info
-projectInfo :: String -> Bool -> OutputFormat -> String -> IO ()
+projectInfo :: String -- ^ server
+            -> Bool -- ^ no hide
+            -> OutputFormat
+            -> String -- ^ repo
+            -> IO ()
 projectInfo server nohide format repo = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
@@ -312,13 +375,23 @@ projectInfo server nohide format repo = do
   either error' (yamlPrinter nohide format) eval
 
 -- | Display project issue
-projectIssue :: String -> Bool -> OutputFormat -> String -> Int -> IO ()
+projectIssue :: String -- ^ server
+             -> Bool -- ^ no hide
+             -> OutputFormat
+             -> String -- ^ repo
+             -> Int -- ^ issue
+             -> IO ()
 projectIssue server nohide format repo issue = do
   eval <- pagureProjectIssueInfo server repo issue
   either error' (yamlPrinter nohide format) eval
 
 -- | Display project pull request
-projectPR :: String -> Bool -> OutputFormat -> String -> Int -> IO ()
+projectPR :: String -- ^ server
+          -> Bool -- ^ no hide
+          -> OutputFormat
+          -> String -- ^ repo
+          -> Int -- ^ PR number
+          -> IO ()
 projectPR server nohide format repo issue = do
   let namespace =
         if server == srcFedoraprojectOrg && '/' `notElem` repo
@@ -328,32 +401,53 @@ projectPR server nohide format repo issue = do
   either error' (yamlPrinter nohide format) eval
 
 -- | Display user info
-userInfo :: String -> Bool -> OutputFormat -> String -> IO ()
+userInfo :: String -- ^ server
+         -> Bool -- ^ no hide
+         -> OutputFormat
+         -> String -- ^ user
+         -> IO ()
 userInfo server nohide format user = do
   eval <- pagureUserInfo server user []
   either error' (yamlPrinter nohide format) eval
 
 -- | Show user activity stats
-userActivityStats :: String -> OutputFormat -> String -> IO ()
+userActivityStats :: String -- ^ server
+                  -> OutputFormat
+                  -> String -- ^ user
+                  -> IO ()
 userActivityStats server format user = do
   eval <- pagureUserActivityStats server False user
   either error' (yamlPrinter False format) eval
 
 -- | Show user activity on date
-userActivityDate :: String -> OutputFormat -> Bool -> String -> String -> IO ()
+userActivityDate :: String -- ^ server
+                 -> OutputFormat
+                 -> Bool -- ^ summary
+                 -> String -- ^ user
+                 -> String -- ^ date
+                 -> IO ()
 userActivityDate server format summary user date = do
   eval <- pagureUserActivityDate server summary user date
   either error' (yamlPrinter False format) eval
 
 -- | List user issues
-userIssues :: String -> Bool -> OutputFormat -> String -> IO ()
+userIssues :: String -- ^ server
+           -> Bool -- ^ count
+           -> OutputFormat
+           -> String -- ^ user
+           -> IO ()
 userIssues server count format user = do
   issues <- pagureUserIssues server count user
   mapM_ (yamlPrinter False format) issues
 
 -- | List pull requests filed by user
-userRequestsFiled :: String -> Bool -> OutputFormat -> Maybe String
-                  -> Maybe String -> String -> IO ()
+userRequestsFiled :: String -- ^ server
+                  -> Bool -- ^ count
+                  -> OutputFormat
+                  -> Maybe String -- ^ pattern
+                  -> Maybe String -- ^ status
+                  -> String -- ^ user
+                  -> IO ()
 userRequestsFiled server count format mpat mstatus user = do
   result <- pagureUserRequestsFiled server count (fromMaybe "Open" mstatus) user
   let requests = concatMap (lookupKey' "requests") result
@@ -377,8 +471,13 @@ userRequestsFiled server count format mpat mstatus user = do
         return (id',title,repo)
 
 -- | Show actionable pull requests for user
-userRequestsActionable :: String -> Bool -> OutputFormat -> Maybe String
-                     -> Maybe String -> String -> IO ()
+userRequestsActionable :: String -- ^ server
+                       -> Bool -- ^ count
+                       -> OutputFormat
+                       -> Maybe String -- ^ pattern
+                       -> Maybe String -- ^ status
+                       -> String -- ^ user
+                       -> IO ()
 userRequestsActionable server count format mpat mstatus user = do
   result <- pagureUserRequestsActionable server count (fromMaybe "Open" mstatus) user
   let requests = concatMap (lookupKey' "requests") result
@@ -402,7 +501,12 @@ userRequestsActionable server count format mpat mstatus user = do
         return (id',title,repo)
 
 -- | Show group info
-groupInfo :: String -> Bool -> Bool -> OutputFormat -> String -> IO ()
+groupInfo :: String -- ^ server
+          -> Bool -- ^ projects
+          -> Bool -- ^ no hide
+          -> OutputFormat
+          -> String -- ^ group
+          -> IO ()
 groupInfo server projects nohide format group = do
   let params = boolKey projects "projects" "1"
   eval <- pagureGroupInfo server group params
@@ -410,7 +514,10 @@ groupInfo server projects nohide format group = do
 
 -- FIXME support acl parameter (admin, commit or ticket)
 -- | List group projects
-groupProjects :: String -> Bool -> String -> IO ()
+groupProjects :: String -- ^ server
+              -> Bool -- ^ count
+              -> String -- ^ group
+              -> IO ()
 groupProjects server count group =
   pagureGroupRepos server count group >>=
   mapM_ T.putStrLn
